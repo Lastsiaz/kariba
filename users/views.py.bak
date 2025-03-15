@@ -1,0 +1,86 @@
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import login, logout
+from django.db import IntegrityError
+from .forms import UserRegistrationForm, UserProfileUpdateForm, UserUpdateForm
+from .models import UserProfile
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'You have been successfully logged out.')
+    return redirect('login')
+
+def is_admin(user):
+    return user.is_authenticated and user.userprofile.role == 'admin'
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                # The UserProfile will be created automatically by the signal
+                user.userprofile.role = 'viewer'  # Default role for self-registered users
+                user.userprofile.save()
+                login(request, user)  # Log the user in after registration
+                messages.success(request, f'Account created successfully! Welcome {user.username}!')
+                return redirect('dashboard')
+            except IntegrityError:
+                messages.error(request, 'This email address is already registered. Please use a different email or try logging in.')
+                return render(request, 'users/register.html', {'form': form})
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'users/register.html', {'form': form})
+
+@user_passes_test(is_admin)
+def admin_register_user(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                # The UserProfile will be created automatically by the signal
+                role = request.POST.get('role')
+                user.userprofile.role = role
+                user.userprofile.save()
+                messages.success(request, f'Account created successfully for {user.email}')
+                return redirect('user_list')
+            except IntegrityError:
+                messages.error(request, 'This email address is already registered. Please use a different email.')
+                return render(request, 'users/register.html', {'form': form})
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'users/register.html', {'form': form})
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = UserProfileUpdateForm(request.POST, instance=request.user.userprofile)
+        
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, 'Your profile has been updated!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = UserProfileUpdateForm(instance=request.user.userprofile)
+    
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+    return render(request, 'users/profile.html', context)
+
+@user_passes_test(is_admin)
+def user_list(request):
+    users = UserProfile.objects.all().select_related('user')
+    return render(request, 'users/user_list.html', {'users': users})
+
+@login_required
+def dashboard(request):
+    user_role = request.user.userprofile.role
+    template_name = f'dashboard/{user_role}_dashboard.html'
+    return render(request, template_name) 

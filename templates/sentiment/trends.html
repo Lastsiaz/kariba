@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sentiment Trends - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .trends-container {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .trend-filters {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    .chart-container {
+        height: 400px;
+        margin-bottom: 2rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .trend-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    .trend-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .trend-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .trend-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .trend-change {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    .trend-up {
+        color: #28a745;
+    }
+    .trend-down {
+        color: #dc3545;
+    }
+    .trend-neutral {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="trends-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Sentiment Trends</h2>
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="exportTrends('pdf')">
+                    <i class="fas fa-file-pdf me-2"></i>Export PDF
+                </button>
+                <button class="btn btn-outline-primary" onclick="exportTrends('excel')">
+                    <i class="fas fa-file-excel me-2"></i>Export Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="trend-filters">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Time Range</label>
+                    <select class="form-select" id="timeRange">
+                        <option value="day">Last 24 Hours</option>
+                        <option value="week">Last 7 Days</option>
+                        <option value="month">Last 30 Days</option>
+                        <option value="quarter">Last Quarter</option>
+                        <option value="year">Last Year</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Granularity</label>
+                    <select class="form-select" id="granularity">
+                        <option value="hour">Hourly</option>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="month">Monthly</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Source Type</label>
+                    <select class="form-select" id="sourceType">
+                        <option value="all">All Sources</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="news">News Articles</option>
+                        <option value="reviews">Customer Reviews</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="trend-card text-center">
+                    <div class="trend-value">{{ avg_sentiment|floatformat:2 }}</div>
+                    <div class="trend-label">Average Sentiment</div>
+                    <div class="trend-change {% if sentiment_change > 0 %}trend-up{% elif sentiment_change < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                        {% if sentiment_change > 0 %}↑{% elif sentiment_change < 0 %}↓{% else %}→{% endif %}
+                        {{ sentiment_change|abs|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="trend-card text-center">
+                    <div class="trend-value">{{ volume_per_hour|floatformat:1 }}</div>
+                    <div class="trend-label">Volume per Hour</div>
+                    <div class="trend-change {% if volume_change > 0 %}trend-up{% elif volume_change < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                        {% if volume_change > 0 %}↑{% elif volume_change < 0 %}↓{% else %}→{% endif %}
+                        {{ volume_change|abs|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="trend-card text-center">
+                    <div class="trend-value">{{ positive_ratio|floatformat:1 }}%</div>
+                    <div class="trend-label">Positive Ratio</div>
+                    <div class="trend-change {% if positive_change > 0 %}trend-up{% elif positive_change < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                        {% if positive_change > 0 %}↑{% elif positive_change < 0 %}↓{% else %}→{% endif %}
+                        {{ positive_change|abs|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="trend-card text-center">
+                    <div class="trend-value">{{ negative_ratio|floatformat:1 }}%</div>
+                    <div class="trend-label">Negative Ratio</div>
+                    <div class="trend-change {% if negative_change > 0 %}trend-up{% elif negative_change < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                        {% if negative_change > 0 %}↑{% elif negative_change < 0 %}↓{% else %}→{% endif %}
+                        {{ negative_change|abs|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="chart-container">
+                    <canvas id="sentimentTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="volumeDistributionChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="sentimentDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h3 class="mb-4">Notable Changes</h3>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Metric</th>
+                            <th>Change</th>
+                            <th>Contributing Factors</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for change in notable_changes %}
+                        <tr>
+                            <td>{{ change.timestamp|date:"M d, Y H:i" }}</td>
+                            <td>{{ change.metric }}</td>
+                            <td>
+                                <span class="badge {% if change.value > 0 %}bg-success{% elif change.value < 0 %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {% if change.value > 0 %}↑{% elif change.value < 0 %}↓{% else %}→{% endif %}
+                                    {{ change.value|abs|floatformat:1 }}%
+                                </span>
+                            </td>
+                            <td>{{ change.factors }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Sentiment Trend Chart
+const trendCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trend_dates|safe }},
+        datasets: [
+            {
+                label: 'Average Sentiment',
+                data: {{ sentiment_scores|safe }},
+                borderColor: '#0d6efd',
+                tension: 0.1,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Volume',
+                data: {{ volume_data|safe }},
+                borderColor: '#6c757d',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Sentiment and Volume Trends'
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Sentiment Score'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Volume'
+                },
+                grid: {
+                    drawOnChartArea: false
+                }
+            }
+        }
+    }
+});
+
+// Volume Distribution Chart
+const volumeCtx = document.getElementById('volumeDistributionChart').getContext('2d');
+new Chart(volumeCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ volume_labels|safe }},
+        datasets: [{
+            label: 'Volume Distribution',
+            data: {{ volume_distribution|safe }},
+            backgroundColor: '#0d6efd'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Volume Distribution'
+            }
+        }
+    }
+});
+
+// Sentiment Distribution Chart
+const distributionCtx = document.getElementById('sentimentDistributionChart').getContext('2d');
+new Chart(distributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+            data: [
+                {{ positive_percentage }},
+                {{ neutral_percentage }},
+                {{ negative_percentage }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Sentiment Distribution'
+            }
+        }
+    }
+});
+
+// Filter handling
+function applyFilters() {
+    const timeRange = document.getElementById('timeRange').value;
+    const granularity = document.getElementById('granularity').value;
+    const sourceType = document.getElementById('sourceType').value;
+    
+    window.location.href = `{% url 'sentiment:trends' %}?range=${timeRange}&granularity=${granularity}&source=${sourceType}`;
+}
+
+document.getElementById('timeRange').addEventListener('change', applyFilters);
+document.getElementById('granularity').addEventListener('change', applyFilters);
+document.getElementById('sourceType').addEventListener('change', applyFilters);
+
+function exportTrends(format) {
+    const timeRange = document.getElementById('timeRange').value;
+    const granularity = document.getElementById('granularity').value;
+    const sourceType = document.getElementById('sourceType').value;
+    
+    window.location.href = `{% url 'sentiment:export_trends' %}?format=${format}&range=${timeRange}&granularity=${granularity}&source=${sourceType}`;
+}
+</script>
+{% endblock %} 

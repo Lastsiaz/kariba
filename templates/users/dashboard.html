@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Welcome, {{ user.get_full_name }}</h2>
+            <p class="text-muted">Role: {{ user_profile.get_role_display }} | Department: {{ user_profile.department }}</p>
+        </div>
+    </div>
+
+    {% if user_profile.is_admin %}
+    <!-- Admin Dashboard -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2 class="card-text">{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Total Analysts</h5>
+                    <h2 class="card-text">{{ total_analysts }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Total Researchers</h5>
+                    <h2 class="card-text">{{ total_researchers }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">User Management</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'admin_register_user' %}" class="btn btn-primary mb-3">
+                        <i class="fas fa-user-plus"></i> Add New User
+                    </a>
+                    <a href="{% url 'user_list' %}" class="btn btn-info mb-3">
+                        <i class="fas fa-users"></i> View All Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif user_profile.is_analyst %}
+    <!-- Analyst Dashboard -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Analysis Tasks</h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis_tasks %}
+                        <ul class="list-group">
+                            {% for task in analysis_tasks %}
+                                <li class="list-group-item">{{ task }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No pending analysis tasks.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Reports</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_reports %}
+                        <ul class="list-group">
+                            {% for report in recent_reports %}
+                                <li class="list-group-item">{{ report }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent reports.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'analysis' %}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Start New Analysis
+                    </a>
+                    <a href="{% url 'reports' %}" class="btn btn-info">
+                        <i class="fas fa-file-alt"></i> View All Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif user_profile.is_researcher %}
+    <!-- Researcher Dashboard -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Research Data</h5>
+                </div>
+                <div class="card-body">
+                    {% if research_data %}
+                        <ul class="list-group">
+                            {% for data in research_data %}
+                                <li class="list-group-item">{{ data }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No research data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Findings</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_findings %}
+                        <ul class="list-group">
+                            {% for finding in recent_findings %}
+                                <li class="list-group-item">{{ finding }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent findings.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Research Tools</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'reports' %}" class="btn btn-primary">
+                        <i class="fas fa-book"></i> Research Library
+                    </a>
+                    <a href="#" class="btn btn-info">
+                        <i class="fas fa-microscope"></i> Research Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif user_profile.is_marketer %}
+    <!-- Marketer Dashboard -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Marketing Campaigns</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">No active campaigns.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Analytics</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">No analytics data available.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Marketing Tools</h5>
+                </div>
+                <div class="card-body">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-bullhorn"></i> Create Campaign
+                    </a>
+                    <a href="#" class="btn btn-info">
+                        <i class="fas fa-chart-bar"></i> View Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sample data for the chart
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const data = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: '{% if user_profile.is_admin %}User Activity{% elif user_profile.is_analyst %}Analysis Tasks{% else %}Report Views{% endif %}',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    };
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

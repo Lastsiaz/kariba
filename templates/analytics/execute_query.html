@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Execute Query - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin-bottom: 2rem;
+}
+
+.result-card {
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.export-options {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.export-options.show {
+    display: block;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'analytics:dashboard' %}">Analytics</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ query.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ query.title }}</h2>
+            <p class="text-muted">{{ query.description }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" onclick="executeQuery()">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleExportOptions(event)">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <div class="export-options">
+                    <button class="btn btn-link" onclick="exportResults('csv')">CSV</button>
+                    <button class="btn btn-link" onclick="exportResults('json')">JSON</button>
+                    <button class="btn btn-link" onclick="exportResults('excel')">Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Query Details</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">{{ query.query_type }}</dd>
+                        
+                        <dt class="col-sm-4">Created</dt>
+                        <dd class="col-sm-8">{{ query.created_at|date:"M d, Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Last Run</dt>
+                        <dd class="col-sm-8">{{ query.last_run_at|date:"M d, Y H:i"|default:"Never" }}</dd>
+                        
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{{ query.status_color }}">{{ query.status }}</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Parameters</h5>
+                    <div class="parameters-display">
+                        {{ query.parameters|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="card result-card">
+                <div class="card-body">
+                    <h5 class="card-title">Results</h5>
+                    
+                    <div id="visualizationTabs" class="mb-4">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#chartView">
+                                    <i class="fas fa-chart-bar"></i> Chart
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#tableView">
+                                    <i class="fas fa-table"></i> Table
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#rawView">
+                                    <i class="fas fa-code"></i> Raw
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-content">
+                        <div id="chartView" class="tab-pane fade show active">
+                            <div class="chart-container">
+                                <canvas id="resultChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div id="tableView" class="tab-pane fade">
+                            <div class="table-responsive">
+                                <table id="resultTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <!-- Dynamically populated -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dynamically populated -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div id="rawView" class="tab-pane fade">
+                            <pre><code id="rawResult" class="json"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@2.x/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.x/dist/chartjs-adapter-luxon.min.js"></script>
+
+<script>
+let currentChart = null;
+
+function showLoading() {
+    document.querySelector('.loading-overlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.querySelector('.loading-overlay').style.display = 'none';
+}
+
+function toggleExportOptions(event) {
+    event.stopPropagation();
+    const options = document.querySelector('.export-options');
+    options.classList.toggle('show');
+    
+    document.addEventListener('click', function closeExport(e) {
+        if (!options.contains(e.target)) {
+            options.classList.remove('show');
+            document.removeEventListener('click', closeExport);
+        }
+    });
+}
+
+async function executeQuery() {
+    showLoading();
+    try {
+        const response = await fetch("{% url 'analytics:execute_query' query.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Query execution failed');
+        
+        const result = await response.json();
+        updateVisualization(result);
+    } catch (error) {
+        alert('Error executing query: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateVisualization(data) {
+    updateChart(data);
+    updateTable(data);
+    updateRawView(data);
+}
+
+function updateChart(data) {
+    if (currentChart) {
+        currentChart.destroy();
+    }
+    
+    const ctx = document.getElementById('resultChart').getContext('2d');
+    const chartConfig = generateChartConfig(data);
+    currentChart = new Chart(ctx, chartConfig);
+}
+
+function generateChartConfig(data) {
+    // Default configuration - modify based on query type and data structure
+    return {
+        type: '{{ query.chart_type|default:"bar" }}',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: '{{ query.title }}',
+                data: data.values,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: '{{ query.title }}'
+                }
+            }
+        }
+    };
+}
+
+function updateTable(data) {
+    const table = document.getElementById('resultTable');
+    const thead = table.querySelector('thead tr');
+    const tbody = table.querySelector('tbody');
+    
+    // Clear existing content
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    
+    // Add headers
+    Object.keys(data.columns || {}).forEach(column => {
+        const th = document.createElement('th');
+        th.textContent = column;
+        thead.appendChild(th);
+    });
+    
+    // Add rows
+    (data.rows || []).forEach(row => {
+        const tr = document.createElement('tr');
+        Object.values(row).forEach(value => {
+            const td = document.createElement('td');
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function updateRawView(data) {
+    const rawResult = document.getElementById('rawResult');
+    rawResult.textContent = JSON.stringify(data, null, 2);
+}
+
+async function exportResults(format) {
+    showLoading();
+    try {
+        const response = await fetch(`{% url 'analytics:export_results' query.id %}?format=${format}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `query_results.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    } catch (error) {
+        alert('Error exporting results: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Execute query on page load if auto_execute is true
+document.addEventListener('DOMContentLoaded', function() {
+    {% if auto_execute %}
+    executeQuery();
+    {% endif %}
+});
+</script>
+{% endblock %} 
