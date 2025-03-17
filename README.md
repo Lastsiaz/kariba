@@ -1,3 +1,4 @@
+HEAD
 # Real-time Twitter Sentiment Analysis System
 
 A web-based system for real-time sentiment analysis of Twitter data, designed for government officials, researchers, marketers, and policy makers to analyze public sentiment and make informed decisions.
@@ -34,7 +35,7 @@ A web-based system for real-time sentiment analysis of Twitter data, designed fo
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/sentiment-analysis-system.git
+git 
 cd sentiment-analysis-system
 ```
 
@@ -61,20 +62,20 @@ KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 ```
 
 5. Run migrations:
-```bash
+bash
 python manage.py makemigrations
 python manage.py migrate
-```
+
 
 6. Create a superuser:
-```bash
+bash
 python manage.py createsuperuser
-```
+
 
 7. Start the development server:
-```bash
+bash
 python manage.py runserver
-```
+
 
 ## Usage
 
@@ -83,16 +84,16 @@ python manage.py runserver
 3. Start the Kafka consumer:
 ```bash
 python manage.py start_kafka_consumer
-```
+
 
 4. Start the Twitter stream:
-```bash
+bash
 python manage.py start_twitter_stream
-```
+
 
 ## Project Structure
 
-```
+
 sentiment_analysis_system/
 ├── users/                 # User management app
 ├── analytics/            # Data analytics app
@@ -123,3 +124,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - MongoDB for efficient data storage
 - Apache Kafka for reliable message streaming
 - NLTK and TextBlob for natural language processing 
+
+# kariba
+ fe81014e5b5f2ac2a9bedfb2ea17af69d680c717
