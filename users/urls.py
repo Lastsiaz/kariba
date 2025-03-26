@@ -12,8 +12,11 @@ urlpatterns = [
     path('user/<int:user_id>/edit/', views.edit_user, name='edit_user'),
     path('user/<int:user_id>/delete/', views.delete_user, name='delete_user'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('researcher/dashboard/', views.researcher_dashboard, name='researcher_dashboard'),
     path('analysis/', views.analysis, name='analysis'),
     path('reports/', views.reports, name='reports'),
+    path('campaign/', views.campaign, name='campaign'),
+    path('all-reports/', views.all_reports, name='all_reports'),
     
     # Password Reset URLs
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), name='password_reset'),

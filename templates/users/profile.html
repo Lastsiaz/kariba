@@ -1,66 +1,299 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Profile - Kariba{% endblock %}
+{% block title %}Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-picture-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 20px;
+    }
+    .profile-picture {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .profile-picture-upload {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: #25D366;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        z-index: 2;
+    }
+    .profile-picture-upload:hover {
+        transform: scale(1.1);
+        background: #128C7E;
+    }
+    .profile-picture-upload input[type="file"] {
+        display: none;
+    }
+    .profile-picture-upload i {
+        font-size: 20px;
+    }
+    .image-controls {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin: 20px auto;
+        width: 100%;
+        max-width: 300px;
+        border: 1px solid #dee2e6;
+    }
+    .control-group {
+        margin-bottom: 20px;
+    }
+    .control-group:last-child {
+        margin-bottom: 0;
+    }
+    .control-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #495057;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .control-slider {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        background: #dee2e6;
+        border-radius: 3px;
+        outline: none;
+        margin: 8px 0;
+    }
+    .control-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #25D366;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .control-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        background: #128C7E;
+    }
+    .control-value {
+        font-size: 13px;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 4px;
+    }
+    .reset-controls {
+        background: #25D366;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .reset-controls:hover {
+        background: #128C7E;
+        transform: translateY(-1px);
+    }
+    .card {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-8">
-            <div class="card shadow">
+<div class="container mt-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="profile-picture-container">
+                        {% if user.userprofile.profile_picture %}
+                            <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile Picture" class="profile-picture" id="profile-picture-preview">
+                        {% else %}
+                            <img src="{% static 'images/default-profile.png' %}" alt="Default Profile" class="profile-picture" id="profile-picture-preview">
+                        {% endif %}
+                        <label class="profile-picture-upload" for="profile-picture-input">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" id="profile-picture-input" name="profile_picture" accept="image/*">
+                        </label>
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">{{ user.userprofile.get_role_display }}</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Image Adjustments</h5>
+                </div>
                 <div class="card-body">
-                    <h2 class="text-center mb-4">Profile Information</h2>
-                    
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">Personal Information</h5>
-                                    <p><strong>Username:</strong> {{ user.username }}</p>
-                                    <p><strong>Email:</strong> {{ user.email }}</p>
-                                    <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
-                                    <p><strong>Role:</strong> {{ user.userprofile.get_role_display }}</p>
-                                    <p><strong>Department:</strong> {{ user.userprofile.department }}</p>
-                                    <p><strong>Member Since:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
-                                </div>
-                            </div>
+                    <div class="image-controls">
+                        <div class="control-group">
+                            <label class="control-label">Brightness</label>
+                            <input type="range" class="control-slider" id="brightness-slider" min="0" max="200" value="100">
+                            <div class="control-value">Brightness: <span id="brightness-value">100</span>%</div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">Update Profile</h5>
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        {{ u_form|crispy }}
-                                        {{ p_form|crispy }}
-                                        <div class="d-grid gap-2">
-                                            <button type="submit" class="btn btn-primary">Update Profile</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                        <div class="control-group">
+                            <label class="control-label">Contrast</label>
+                            <input type="range" class="control-slider" id="contrast-slider" min="0" max="200" value="100">
+                            <div class="control-value">Contrast: <span id="contrast-value">100</span>%</div>
                         </div>
+                        <div class="control-group">
+                            <label class="control-label">Saturation</label>
+                            <input type="range" class="control-slider" id="saturation-slider" min="0" max="200" value="100">
+                            <div class="control-value">Saturation: <span id="saturation-value">100</span>%</div>
+                        </div>
+                        <button class="reset-controls" id="reset-controls">Reset Adjustments</button>
                     </div>
-
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Change Password</h5>
-                            <p class="text-muted">Want to change your password? Click the button below.</p>
-                            <a href="{% url 'password_change' %}" class="btn btn-warning">Change Password</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="profile-form">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ u_form|crispy }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ p_form|crispy }}
+                            </div>
                         </div>
-                    </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const profilePicturePreview = document.getElementById('profile-picture-preview');
+    const profileForm = document.getElementById('profile-form');
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const contrastSlider = document.getElementById('contrast-slider');
+    const saturationSlider = document.getElementById('saturation-slider');
+    const brightnessValue = document.getElementById('brightness-value');
+    const contrastValue = document.getElementById('contrast-value');
+    const saturationValue = document.getElementById('saturation-value');
+    const resetControls = document.getElementById('reset-controls');
+
+    // Function to update image filters
+    function updateImageFilters() {
+        const brightness = brightnessSlider.value;
+        const contrast = contrastSlider.value;
+        const saturation = saturationSlider.value;
+        
+        profilePicturePreview.style.filter = `
+            brightness(${brightness}%) 
+            contrast(${contrast}%) 
+            saturate(${saturation}%)
+        `;
+    }
+
+    // Handle sliders
+    brightnessSlider.addEventListener('input', function() {
+        brightnessValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    contrastSlider.addEventListener('input', function() {
+        contrastValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    saturationSlider.addEventListener('input', function() {
+        saturationValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    // Reset controls
+    resetControls.addEventListener('click', function() {
+        brightnessSlider.value = 100;
+        contrastSlider.value = 100;
+        saturationSlider.value = 100;
+        brightnessValue.textContent = '100';
+        contrastValue.textContent = '100';
+        saturationValue.textContent = '100';
+        updateImageFilters();
+    });
+
+    // Preview image before upload
+    profilePictureInput.addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profilePicturePreview.src = e.target.result;
+                // Create a FormData object
+                const formData = new FormData(profileForm);
+                formData.append('profile_picture', profilePictureInput.files[0]);
+                
+                // Submit the form using fetch
+                fetch(profileForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error uploading profile picture. Please try again.');
+                });
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
 {% endblock %} 

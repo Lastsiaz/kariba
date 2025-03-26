@@ -35,7 +35,7 @@ A web-based system for real-time sentiment analysis of Twitter data, designed fo
 
 1. Clone the repository:
 ```bash
-git 
+git https://github.com/Lastsiaz/kariba.git
 cd sentiment-analysis-system
 ```
 

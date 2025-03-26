@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analyst Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+    }
+    .stat-card .card-title {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .stat-card .card-text {
+        color: white;
+    }
+    .welcome-section {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .profile-picture {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #4e73df;
+        margin-right: 20px;
+    }
+    .list-group-item {
+        transition: all 0.3s ease;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="d-flex align-items-center">
+            {% if user.userprofile.profile_picture %}
+                <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+            {% else %}
+                <img src="{% static 'images/default-profile.svg' %}" alt="Default Profile" class="profile-picture">
+            {% endif %}
+            <div>
+                <h2 class="mb-1">Welcome, {{ user.get_full_name|default:user.username }}</h2>
+                <p class="text-muted mb-0">Role: {{ user.userprofile.get_role_display }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <a href="{% url 'analysis' %}" class="nav-link">
+                <i class="fas fa-chart-line"></i> Data Analysis
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'reports' %}" class="nav-link">
+                <i class="fas fa-file-alt"></i> Reports
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="#" class="nav-link">
+                <i class="fas fa-database"></i> Data Sources
+            </a>
+        </div>
+    </div>
+
+    <!-- Analysis Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Analyses</h5>
+                    <h2 class="card-text">{{ total_analyses|default:"0" }}</h2>
+                    <p class="text-white-50 mb-0">Completed analyses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Reports</h5>
+                    <h2 class="card-text">{{ total_reports|default:"0" }}</h2>
+                    <p class="text-white-50 mb-0">Generated reports</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Data Sources</h5>
+                    <h2 class="card-text">{{ total_sources|default:"0" }}</h2>
+                    <p class="text-white-50 mb-0">Connected sources</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Projects</h5>
+                    <h2 class="card-text">{{ active_projects|default:"0" }}</h2>
+                    <p class="text-white-50 mb-0">Current projects</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Analysis Tools -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Analysis Tools</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'analysis' %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Data Analysis</h6>
+                                <small class="text-muted">View Details</small>
+                            </div>
+                            <p class="mb-1">Perform detailed data analysis and generate insights</p>
+                        </a>
+                        <a href="{% url 'reports' %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Reports</h6>
+                                <small class="text-muted">View Details</small>
+                            </div>
+                            <p class="mb-1">Generate and view analytical reports</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Analyses -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Analyses</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">No recent analyses available.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any analyst-specific JavaScript here
+});
+</script>
+{% endblock %} 

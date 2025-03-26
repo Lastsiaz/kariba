@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis - Kariba{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line me-2"></i>Analysis Dashboard</h2>
+            </div>
+
+            <div class="row">
+                <!-- Analysis Overview Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Analysis Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Sentiment Analysis</h6>
+                                        <small class="text-muted">Real-time</small>
+                                    </div>
+                                    <p class="mb-1">Analyze sentiment from various data sources</p>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Trend Analysis</h6>
+                                        <small class="text-muted">Historical</small>
+                                    </div>
+                                    <p class="mb-1">View sentiment trends over time</p>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Topic Analysis</h6>
+                                        <small class="text-muted">Categorical</small>
+                                    </div>
+                                    <p class="mb-1">Analyze sentiment by topic or category</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Analysis Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>No recent analysis</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Tools Section -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Analysis Tools</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAnalysisModal">
+                                            <i class="fas fa-plus me-2"></i>New Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-file-export me-2"></i>Export Results
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-cog me-2"></i>Settings
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Analysis Modal -->
+<div class="modal fade" id="newAnalysisModal" tabindex="-1" aria-labelledby="newAnalysisModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newAnalysisModalLabel">Create New Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="newAnalysisForm" method="POST" action="{% url 'analysis' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="analysisName" class="form-label">Analysis Name</label>
+                        <input type="text" class="form-control" id="analysisName" name="analysis_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="analysisType" class="form-label">Analysis Type</label>
+                        <select class="form-select" id="analysisType" name="analysis_type" required>
+                            <option value="">Select type...</option>
+                            <option value="sentiment">Sentiment Analysis</option>
+                            <option value="trend">Trend Analysis</option>
+                            <option value="topic">Topic Analysis</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dataSource" class="form-label">Data Source</label>
+                        <select class="form-select" id="dataSource" name="data_source" required>
+                            <option value="">Select source...</option>
+                            <option value="social_media">Social Media</option>
+                            <option value="customer_feedback">Customer Feedback</option>
+                            <option value="market_research">Market Research</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateRange" class="form-label">Date Range</label>
+                        <select class="form-select" id="dateRange" name="date_range" required>
+                            <option value="">Select range...</option>
+                            <option value="last_7_days">Last 7 Days</option>
+                            <option value="last_30_days">Last 30 Days</option>
+                            <option value="last_90_days">Last 90 Days</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customDateRange" style="display: none;">
+                        <div class="row">
+                            <div class="col">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" name="start_date">
+                            </div>
+                            <div class="col">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="endDate" name="end_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Analysis</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide custom date range inputs based on selection
+    const dateRangeSelect = document.getElementById('dateRange');
+    const customDateRange = document.getElementById('customDateRange');
+    
+    dateRangeSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+
+    // Form submission handling
+    const newAnalysisForm = document.getElementById('newAnalysisForm');
+    newAnalysisForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Send POST request
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal and show success message
+                const modal = bootstrap.Modal.getInstance(document.getElementById('newAnalysisModal'));
+                modal.hide();
+                // You can add a success notification here
+                alert('Analysis created successfully!');
+            } else {
+                // Show error message
+                alert('Error creating analysis: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the analysis.');
+        });
+    });
+});
+</script>
+{% endblock %} 

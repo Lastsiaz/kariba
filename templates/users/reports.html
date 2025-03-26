@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Kariba{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-alt me-2"></i>Reports Dashboard</h2>
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Generate New Report
+                </button>
+            </div>
+
+            <div class="row">
+                <!-- Report Categories -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Report Categories</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action active">
+                                    <i class="fas fa-chart-bar me-2"></i>Performance Reports
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-users me-2"></i>User Activity Reports
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-clock me-2"></i>Time-based Reports
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-tasks me-2"></i>Task Reports
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="col-md-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Report Name</th>
+                                            <th>Category</th>
+                                            <th>Generated Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>No reports available</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Generation Tools -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Report Generation Tools</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-file-pdf me-2"></i>PDF Export
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-file-excel me-2"></i>Excel Export
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-file-csv me-2"></i>CSV Export
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-print me-2"></i>Print Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Templates -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Report Templates</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Monthly Performance Report</h6>
+                                            <p class="card-text">Standard monthly performance metrics and analysis</p>
+                                            <button class="btn btn-sm btn-outline-primary">Use Template</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">User Activity Summary</h6>
+                                            <p class="card-text">Overview of user activities and engagement</p>
+                                            <button class="btn btn-sm btn-outline-primary">Use Template</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Custom Report</h6>
+                                            <p class="card-text">Create a new report from scratch</p>
+                                            <button class="btn btn-sm btn-outline-primary">Create New</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

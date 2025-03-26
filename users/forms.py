@@ -4,13 +4,21 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from .models import UserProfile
 
+def get_role_choices():
+    return [
+        ('admin', 'Admin'),
+        ('analyst', 'Analyst'),
+        ('marketer', 'Marketer'),
+        ('general_user', 'General User'),
+    ]
+
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
     department = forms.CharField(required=True)
     role = forms.ChoiceField(
-        choices=UserProfile.ROLE_CHOICES,
+        choices=get_role_choices(),
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -99,17 +107,21 @@ class UserProfileUpdateForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     role = forms.ChoiceField(
-        choices=UserProfile.ROLE_CHOICES,
+        choices=get_role_choices(),
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-control',
             'id': 'role-select'
         })
     )
+    profile_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = UserProfile
-        fields = ('department', 'role')
+        fields = ('department', 'role', 'profile_picture')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -128,7 +140,7 @@ class UserProfileUpdateForm(forms.ModelForm):
 
 class AdminUserRegistrationForm(UserRegistrationForm):
     role = forms.ChoiceField(
-        choices=UserProfile.ROLE_CHOICES,
+        choices=get_role_choices(),
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -138,4 +150,4 @@ class AdminUserRegistrationForm(UserRegistrationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['role'].choices = UserProfile.ROLE_CHOICES 
+        self.fields['role'].choices = get_role_choices() 

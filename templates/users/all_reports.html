@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}All Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .report-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .report-card:hover {
+        transform: translateY(-5px);
+    }
+    .report-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .report-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .status-draft {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    .status-in_progress {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-archived {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .report-type {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    .report-actions {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">All Reports</h1>
+        {% if user.userprofile.is_analyst or user.userprofile.is_marketer %}
+        <a href="#" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Report
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-section">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="type" class="form-label">Report Type</label>
+                <select name="type" id="type" class="form-select">
+                    <option value="">All Types</option>
+                    {% for type_value, type_label in report_types %}
+                    <option value="{{ type_value }}" {% if selected_type == type_value %}selected{% endif %}>
+                        {{ type_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for status_value, status_label in status_choices %}
+                    <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>
+                        {{ status_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|default:'' }}">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'all_reports' %}" class="btn btn-outline-secondary">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Reports List -->
+    <div class="reports-list">
+        {% if reports %}
+            {% for report in reports %}
+            <div class="card report-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title mb-1">{{ report.title }}</h5>
+                            <p class="report-meta mb-2">
+                                <span class="report-type">{{ report.get_report_type_display }}</span> •
+                                By {{ report.author.get_full_name|default:report.author.username }} •
+                                {{ report.created_at|date:"M d, Y" }}
+                            </p>
+                        </div>
+                        <span class="report-status status-{{ report.status }}">
+                            {{ report.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="card-text">{{ report.content|truncatewords:50 }}</p>
+                    <div class="report-actions">
+                        <a href="#" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        {% if report.file %}
+                        <a href="{{ report.file.url }}" class="btn btn-sm btn-outline-success" download>
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        {% endif %}
+                        {% if user.userprofile.is_admin or user == report.author %}
+                        <a href="#" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No reports available yet. 
+                {% if user.userprofile.is_analyst or user.userprofile.is_marketer %}
+                <a href="#" class="alert-link">Create your first report</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any report-specific JavaScript here
+});
+</script>
+{% endblock %} 

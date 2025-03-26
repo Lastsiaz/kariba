@@ -132,7 +132,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">Type: {{ result.query.get_query_type_display }}</small>
                                 <div class="btn-group">
-                                    <a href="{% url 'analytics:query_result' result.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    <a href="{% url 'analytics:view_result' result.id %}" class="btn btn-sm btn-outline-primary">View</a>
                                     <a href="{% url 'analytics:export_result' result.id %}" class="btn btn-sm btn-outline-success">Export</a>
                                 </div>
                             </div>

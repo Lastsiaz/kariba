@@ -45,35 +45,16 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% if profile.user != request.user %}
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ profile.user.id }}">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-user-id="{{ profile.user.id }}"
+                                            data-user-name="{{ profile.user.get_full_name }}"
+                                            onclick="showDeleteModal(this)">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     {% endif %}
                                 </div>
                             </td>
                         </tr>
-
-                        <!-- Delete Modal -->
-                        <div class="modal fade" id="deleteModal{{ profile.user.id }}" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Confirm Delete</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete the user "{{ profile.user.get_full_name }}"?
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <form method="POST" action="{% url 'delete_user' profile.user.id %}" style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         {% empty %}
                         <tr>
                             <td colspan="7" class="text-center">No users found.</td>
@@ -85,4 +66,58 @@
         </div>
     </div>
 </div>
+
+<!-- Single Reusable Delete Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the user "<span id="deleteUserName" class="fw-bold"></span>"?
+                <p class="text-danger mt-2">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let deleteModal = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+        
+        // Add submit event listener to the delete form
+        const deleteForm = document.getElementById('deleteUserForm');
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userId = this.getAttribute('data-user-id');
+            if (userId) {
+                this.action = `/users/user/${userId}/delete/`;
+                this.submit();
+            }
+        });
+    });
+
+    function showDeleteModal(button) {
+        const deleteForm = document.getElementById('deleteUserForm');
+        const deleteUserNameSpan = document.getElementById('deleteUserName');
+        
+        deleteForm.setAttribute('data-user-id', button.getAttribute('data-user-id'));
+        deleteUserNameSpan.textContent = button.getAttribute('data-user-name');
+        
+        deleteModal.show();
+    }
+</script>
 {% endblock %} 

@@ -39,4 +39,38 @@ def advanced_features_required(view_func):
     return role_required(['admin', 'data_analyst', 'researcher'])(view_func)
 
 def report_access_required(view_func):
-    return role_required(['admin', 'data_analyst', 'researcher'])(view_func) 
+    return role_required(['admin', 'data_analyst', 'researcher'])(view_func)
+
+def admin_required(function):
+    @wraps(function)
+    def wrap(request, *args, **kwargs):
+        if request.user.userprofile.is_admin:
+            return function(request, *args, **kwargs)
+        raise PermissionDenied
+    return wrap
+
+def analyst_required(function):
+    @wraps(function)
+    def wrap(request, *args, **kwargs):
+        if request.user.userprofile.is_analyst:
+            return function(request, *args, **kwargs)
+        raise PermissionDenied
+    return wrap
+
+def marketer_required(function):
+    @wraps(function)
+    def wrap(request, *args, **kwargs):
+        if request.user.userprofile.is_marketer:
+            return function(request, *args, **kwargs)
+        raise PermissionDenied
+    return wrap
+
+def role_required(roles):
+    def decorator(function):
+        @wraps(function)
+        def wrap(request, *args, **kwargs):
+            if request.user.userprofile.role in roles:
+                return function(request, *args, **kwargs)
+            raise PermissionDenied
+        return wrap
+    return decorator 
