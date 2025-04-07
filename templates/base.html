@@ -79,6 +79,64 @@
         .auth-container {
             margin-top: 2rem;
         }
+        
+        /* Notification styles */
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(25%, -25%);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .notification-dropdown {
+            padding: 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .notification-dropdown .dropdown-header {
+            padding: 0.75rem 1rem;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .notifications-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .empty-notification {
+            color: #6c757d;
+        }
+        
+        .empty-notification i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+        
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        
+        .notification-content {
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-meta {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -112,6 +170,23 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
+                        {% if user.userprofile.is_admin %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="badge bg-danger notification-badge" style="display: none;">0</span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationsDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                                    <div class="dropdown-header">Notifications</div>
+                                    <div class="notifications-container">
+                                        <div class="text-center p-3 empty-notification">
+                                            <i class="fas fa-bell-slash"></i>
+                                            <p class="mb-0">No new notifications</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <form method="post" action="{% url 'logout' %}" class="d-inline">
                                 {% csrf_token %}
@@ -177,6 +252,64 @@
             document.addEventListener('ajax:beforeSend', function(e) {
                 e.detail.xhr.setRequestHeader('X-CSRFToken', csrftoken);
             });
+            
+            // Notification system
+            const notificationBadge = document.querySelector('.notification-badge');
+            const notificationsContainer = document.querySelector('.notifications-container');
+            const emptyNotification = document.querySelector('.empty-notification');
+            let notificationCount = 0;
+            
+            // Function to update notification badge
+            function updateNotificationBadge(count) {
+                if (count > 0) {
+                    notificationBadge.style.display = 'block';
+                    notificationBadge.textContent = count;
+                } else {
+                    notificationBadge.style.display = 'none';
+                }
+            }
+            
+            // Function to add a notification to the dropdown
+            function addNotificationToDropdown(title, message, time) {
+                if (emptyNotification) {
+                    emptyNotification.style.display = 'none';
+                }
+                
+                const notificationItem = document.createElement('div');
+                notificationItem.className = 'notification-item';
+                notificationItem.innerHTML = `
+                    <div class="notification-content">${message}</div>
+                    <div class="notification-meta">${time}</div>
+                `;
+                
+                notificationsContainer.insertBefore(notificationItem, notificationsContainer.firstChild);
+                notificationCount++;
+                updateNotificationBadge(notificationCount);
+            }
+            
+            // Function to check for new reports
+            function checkForNewReports() {
+                fetch('{% url "check_new_reports" %}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.count > 0) {
+                            data.new_reports.forEach(report => {
+                                const message = `${report.author} has submitted a new ${report.type} report: "${report.title}"`;
+                                const time = new Date(report.created_at).toLocaleString();
+                                addNotificationToDropdown('New Report', message, time);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking for new reports:', error);
+                    });
+            }
+            
+            // Check for new reports every 30 seconds
+            setInterval(checkForNewReports, 30000);
+            
+            // Check for new reports immediately
+            checkForNewReports();
         });
     </script>
     <!-- Chart.js -->

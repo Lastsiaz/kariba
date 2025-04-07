@@ -20,6 +20,7 @@ from django.http import JsonResponse
 import psutil
 import platform
 from datetime import datetime
+from django.urls import reverse
 
 def register(request):
     if request.method == 'POST':
@@ -398,14 +399,17 @@ def dashboard(request):
 def analyst_dashboard(request):
     user_profile = request.user.userprofile
     
+    # Get user's display name
+    user_display_name = request.user.get_full_name() or request.user.username
+    
     # Get analysis statistics
     total_analyses = Report.objects.filter(
-        created_by=request.user,
+        author=request.user,
         report_type='analysis'
     ).count()
     
     total_reports = Report.objects.filter(
-        created_by=request.user
+        author=request.user
     ).count()
     
     total_sources = Campaign.objects.filter(
@@ -420,6 +424,7 @@ def analyst_dashboard(request):
     
     context = {
         'user_profile': user_profile,
+        'user_display_name': user_display_name,
         'total_analyses': total_analyses,
         'total_reports': total_reports,
         'total_sources': total_sources,
@@ -457,7 +462,7 @@ def analysis(request):
     return render(request, 'users/analysis.html')
 
 @login_required
-@role_required(['analyst', 'marketer'])
+@role_required(['analyst', 'marketer', 'researcher'])
 def reports(request):
     return render(request, 'users/reports.html')
 
@@ -696,3 +701,70 @@ def marketer_dashboard(request):
     }
     
     return render(request, 'users/marketer_dashboard.html', context)
+
+@login_required
+@role_required(['analyst', 'marketer', 'researcher'])
+def view_report(request, report_id):
+    """View a specific report."""
+    report = get_object_or_404(Report, id=report_id)
+    
+    # Check if the user has permission to view this report
+    if report.author != request.user and not request.user.userprofile.is_admin:
+        raise PermissionDenied("You don't have permission to view this report.")
+    
+    context = {
+        'report': report,
+        'user_profile': request.user.userprofile,
+    }
+    
+    return render(request, 'users/view_report.html', context)
+
+@login_required
+@role_required(['analyst', 'marketer', 'researcher'])
+def edit_report(request, report_id):
+    """Edit a specific report."""
+    report = get_object_or_404(Report, id=report_id)
+    
+    # Check if the user has permission to edit this report
+    if report.author != request.user and not request.user.userprofile.is_admin:
+        raise PermissionDenied("You don't have permission to edit this report.")
+    
+    if request.method == 'POST':
+        # Handle form submission for editing the report
+        # This is a placeholder - you would need to implement the actual form handling
+        messages.success(request, 'Report updated successfully!')
+        return redirect('view_report', report_id=report.id)
+    
+    context = {
+        'report': report,
+        'user_profile': request.user.userprofile,
+    }
+    
+    return render(request, 'users/edit_report.html', context)
+
+@login_required
+@role_required(['admin'])
+def check_new_reports(request):
+    """Check for new reports and return them as JSON."""
+    # Get reports created in the last 5 minutes
+    five_minutes_ago = timezone.now() - timezone.timedelta(minutes=5)
+    new_reports = Report.objects.filter(
+        created_at__gte=five_minutes_ago,
+        status='draft'  # Only get draft reports that need review
+    ).order_by('-created_at')
+    
+    reports_data = []
+    for report in new_reports:
+        reports_data.append({
+            'id': report.id,
+            'title': report.title,
+            'author': report.author.get_full_name() or report.author.username,
+            'type': report.get_report_type_display(),
+            'created_at': report.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'url': reverse('view_report', args=[report.id])
+        })
+    
+    return JsonResponse({
+        'new_reports': reports_data,
+        'count': len(reports_data)
+    })

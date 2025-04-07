@@ -104,6 +104,37 @@
         padding: 0.25rem 0.5rem;
         font-size: 0.875rem;
     }
+    /* Publication link styles */
+    .publication-link {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+    
+    .publication-link:hover {
+        color: #3498db;
+        text-decoration: underline;
+    }
+    
+    /* Make the entire row hoverable */
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    /* Style for the action buttons */
+    .btn-outline-primary, .btn-outline-success {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-primary:hover, .btn-outline-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -137,7 +168,7 @@
             </a>
         </div>
         <div class="col-md-4">
-            <a href="#" class="nav-link">
+            <a href="{% url 'reports' %}" class="nav-link">
                 <i class="fas fa-book"></i> Publications
             </a>
         </div>
@@ -248,12 +279,17 @@
                             <th>Type</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for publication in recent_publications %}
                         <tr>
-                            <td>{{ publication.title }}</td>
+                            <td>
+                                <a href="{% url 'view_report' publication.id %}" class="publication-link">
+                                    {{ publication.title }}
+                                </a>
+                            </td>
                             <td>{{ publication.get_report_type_display }}</td>
                             <td>{{ publication.created_at|date:"M d, Y" }}</td>
                             <td>
@@ -261,10 +297,14 @@
                                     {{ publication.get_status_display }}
                                 </span>
                             </td>
+                            <td>
+                                <a href="{% url 'view_report' publication.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="{% url 'edit_report' publication.id %}" class="btn btn-sm btn-outline-success">Edit</a>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">No publications available</td>
+                            <td colspan="5" class="text-center">No publications available</td>
                         </tr>
                         {% endfor %}
                     </tbody>

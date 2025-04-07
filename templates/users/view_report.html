@@ -1,1 +1,81 @@
- 
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}View Report - {{ report.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ report.title }}</h4>
+                    <div>
+                        <a href="{% url 'edit_report' report.id %}" class="btn btn-primary">Edit Report</a>
+                        <a href="{% url 'reports' %}" class="btn btn-outline-secondary">Back to Reports</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Author:</strong> {{ report.author.get_full_name|default:report.author.username }}</p>
+                            <p><strong>Type:</strong> {{ report.get_report_type_display }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if report.status == 'published' %}bg-success{% elif report.status == 'draft' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Created:</strong> {{ report.created_at|date:"F d, Y" }}</p>
+                            <p><strong>Last Updated:</strong> {{ report.updated_at|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="report-content">
+                        <h5>Summary</h5>
+                        <p>{{ report.summary|default:"No summary available." }}</p>
+                        
+                        <h5 class="mt-4">Content</h5>
+                        <div class="report-body">
+                            {{ report.content|default:"No content available."|linebreaks }}
+                        </div>
+                        
+                        {% if report.attachments.all %}
+                        <h5 class="mt-4">Attachments</h5>
+                        <ul class="list-group">
+                            {% for attachment in report.attachments.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ attachment.name }}
+                                <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">Download</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-content {
+        margin-top: 20px;
+    }
+    
+    .report-body {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 0.8em;
+    }
+</style>
+{% endblock %} 

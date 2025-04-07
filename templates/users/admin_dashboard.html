@@ -101,11 +101,96 @@
         background-color: #cce5ff;
         color: #004085;
     }
+    
+    /* Notification styles */
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 9999;
+        max-width: 350px;
+        pointer-events: auto;
+    }
+    
+    .notification {
+        background-color: #fff;
+        border-left: 4px solid #ff9800;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        animation: slideIn 0.5s ease-out;
+        transition: all 0.3s ease;
+        opacity: 1;
+    }
+    
+    .notification:hover {
+        transform: translateX(5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .notification-icon {
+        margin-right: 15px;
+        font-size: 24px;
+        color: #ff9800;
+    }
+    
+    .notification-content {
+        flex-grow: 1;
+    }
+    
+    .notification-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .notification-message {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .notification-close {
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+        transition: color 0.2s ease;
+    }
+    
+    .notification-close:hover {
+        color: #343a40;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer">
+        <!-- Notifications will be dynamically added here -->
+    </div>
+    
     <!-- Welcome Section -->
     <div class="welcome-section">
         <div class="d-flex align-items-center">
@@ -351,11 +436,124 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM content loaded');
+        
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+        
+        // Notification system
+        const notificationContainer = document.getElementById('notificationContainer');
+        console.log('Notification container:', notificationContainer);
+        
+        if (!notificationContainer) {
+            console.error('Notification container not found!');
+            return;
+        }
+        
+        let notificationCount = 0;
+        
+        // Function to create a notification
+        function createNotification(title, message, type = 'info') {
+            console.log('Creating notification:', title, message, type);
+            
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.id = `notification-${notificationCount}`;
+            
+            // Set border color based on type
+            if (type === 'success') {
+                notification.style.borderLeftColor = '#4CAF50';
+            } else if (type === 'warning') {
+                notification.style.borderLeftColor = '#FF9800';
+            } else if (type === 'error') {
+                notification.style.borderLeftColor = '#F44336';
+            } else {
+                notification.style.borderLeftColor = '#2196F3';
+            }
+            
+            // Create notification content
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <div class="notification-close" onclick="closeNotification('notification-${notificationCount}')">
+                    <i class="fas fa-times"></i>
+                </div>
+            `;
+            
+            // Add to container
+            notificationContainer.appendChild(notification);
+            console.log('Notification added to container');
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                closeNotification(`notification-${notificationCount}`);
+            }, 5000);
+            
+            notificationCount++;
+        }
+        
+        // Function to close a notification
+        window.closeNotification = function(id) {
+            console.log('Closing notification:', id);
+            const notification = document.getElementById(id);
+            if (notification) {
+                notification.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    notification.remove();
+                    console.log('Notification removed');
+                }, 500);
+            } else {
+                console.error('Notification not found:', id);
+            }
+        };
+        
+        // Check for new reports periodically
+        function checkForNewReports() {
+            console.log('Checking for new reports');
+            // Make an AJAX call to the backend
+            fetch('{% url "check_new_reports" %}')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('New reports data:', data);
+                    if (data.count > 0) {
+                        // Show notifications for each new report
+                        data.new_reports.forEach(report => {
+                            createNotification(
+                                'New Report Available',
+                                `${report.author} has submitted a new ${report.type} report: "${report.title}"`,
+                                'info'
+                            );
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for new reports:', error);
+                });
+        }
+        
+        // Check for new reports every 30 seconds
+        setInterval(checkForNewReports, 30000);
+        
+        // Check for new reports immediately on page load
+        checkForNewReports();
+        
+        // Display a test notification after 2 seconds
+        setTimeout(() => {
+            console.log('Displaying test notification');
+            createNotification(
+                'Test Notification',
+                'This is a test notification to verify the notification system is working.',
+                'info'
+            );
+        }, 2000);
     });
 </script>
 {% endblock %} 

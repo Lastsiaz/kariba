@@ -59,6 +59,23 @@
         border: 3px solid #25D366;
         margin-right: 20px;
     }
+    .under-development {
+        position: relative;
+        cursor: not-allowed;
+        opacity: 0.8;
+    }
+    .under-development::after {
+        content: "Under Development";
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #ffc107;
+        color: #000;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-weight: bold;
+    }
 </style>
 {% endblock %}
 
@@ -211,14 +228,19 @@
     <div class="nav-section">
         <h5 class="mb-3">Quick Navigation</h5>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <a href="{% url 'campaign' %}" class="nav-link">
                     <i class="fas fa-bullhorn"></i> Campaigns
                 </a>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <a href="{% url 'analysis' %}" class="nav-link">
                     <i class="fas fa-chart-line"></i> Analytics
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="#" class="nav-link under-development" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature is currently under development">
+                    <i class="fas fa-map-marked-alt"></i> Tweet Density Map
                 </a>
             </div>
         </div>
@@ -266,6 +288,12 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
     // Handle new analysis creation
     document.getElementById('createAnalysisBtn').addEventListener('click', function() {
         const name = document.getElementById('analysisName').value;
