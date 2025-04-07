@@ -19,9 +19,11 @@ urlpatterns = [
     path('reports/', views.reports, name='reports'),
     path('campaign/', views.campaign, name='campaign'),
     path('all-reports/', views.all_reports, name='all_reports'),
+    path('report/create/', views.create_report, name='create_report'),
     path('report/<int:report_id>/view/', views.view_report, name='view_report'),
     path('report/<int:report_id>/edit/', views.edit_report, name='edit_report'),
     path('check-new-reports/', views.check_new_reports, name='check_new_reports'),
+    path('export_report/', views.export_report, name='export_report'),
     
     # Password Reset URLs
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), name='password_reset'),

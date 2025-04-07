@@ -16,11 +16,20 @@ from .models import UserProfile, Campaign, Report
 from .decorators import admin_required, analyst_required, role_required
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import psutil
 import platform
 from datetime import datetime
 from django.urls import reverse
+import csv
+import io
+import json
+import xlsxwriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
 def register(request):
     if request.method == 'POST':
@@ -422,6 +431,9 @@ def analyst_dashboard(request):
         status='active'
     ).count()
     
+    # Get user's reports
+    reports = Report.objects.filter(author=request.user).order_by('-created_at')
+    
     context = {
         'user_profile': user_profile,
         'user_display_name': user_display_name,
@@ -429,6 +441,7 @@ def analyst_dashboard(request):
         'total_reports': total_reports,
         'total_sources': total_sources,
         'active_projects': active_projects,
+        'reports': reports,
     }
     
     return render(request, 'users/analyst_dashboard.html', context)
@@ -742,8 +755,7 @@ def edit_report(request, report_id):
     
     return render(request, 'users/edit_report.html', context)
 
-@login_required
-@role_required(['admin'])
+@role_required(['admin', 'analyst', 'marketer', 'researcher'])
 def check_new_reports(request):
     """Check for new reports and return them as JSON."""
     # Get reports created in the last 5 minutes
@@ -768,3 +780,194 @@ def check_new_reports(request):
         'new_reports': reports_data,
         'count': len(reports_data)
     })
+
+@login_required
+@role_required(['analyst'])
+def export_report(request):
+    """Export reports in various formats."""
+    try:
+        # Get the format type from the query parameters
+        format_type = request.GET.get('format', 'pdf').lower()
+        
+        # Get reports authored by the current user
+        reports = Report.objects.filter(author=request.user).order_by('-created_at')
+        
+        if not reports.exists():
+            messages.error(request, 'No reports found to export.')
+            return redirect('analyst_dashboard')
+        
+        if format_type == 'pdf':
+            try:
+                # Create a PDF response
+                response = HttpResponse(content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="reports_export.pdf"'
+                
+                # Create the PDF document
+                doc = SimpleDocTemplate(response, pagesize=letter)
+                elements = []
+                
+                # Add title
+                styles = getSampleStyleSheet()
+                title_style = styles['Heading1']
+                title = Paragraph("Reports Export", title_style)
+                elements.append(title)
+                elements.append(Paragraph("<br/><br/>", styles['Normal']))
+                
+                # Create table data
+                data = [['Title', 'Type', 'Status', 'Created At']]
+                for report in reports:
+                    data.append([
+                        report.title,
+                        report.get_report_type_display(),
+                        report.get_status_display(),
+                        report.created_at.strftime('%Y-%m-%d %H:%M')
+                    ])
+                
+                # Create table
+                table = Table(data)
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 14),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 12),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(table)
+                
+                # Build PDF
+                doc.build(elements)
+                return response
+            except Exception as e:
+                messages.error(request, f'Error generating PDF file: {str(e)}')
+                return redirect('analyst_dashboard')
+            
+        elif format_type == 'excel':
+            try:
+                # Create an Excel response
+                output = io.BytesIO()
+                workbook = xlsxwriter.Workbook(output)
+                worksheet = workbook.add_worksheet()
+                
+                # Add title
+                title_format = workbook.add_format({
+                    'bold': True,
+                    'font_size': 14,
+                    'align': 'center',
+                    'bg_color': '#4F81BD',
+                    'font_color': 'white',
+                    'border': 1
+                })
+                
+                worksheet.merge_range('A1:D1', 'Reports Export', title_format)
+                
+                # Add headers
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'bg_color': '#B8CCE4',
+                    'border': 1
+                })
+                
+                headers = ['Title', 'Type', 'Status', 'Created At']
+                for col_num, header in enumerate(headers):
+                    worksheet.write(2, col_num, header, header_format)
+                
+                # Add data
+                for row_num, report in enumerate(reports):
+                    worksheet.write(row_num + 3, 0, report.title)
+                    worksheet.write(row_num + 3, 1, report.get_report_type_display())
+                    worksheet.write(row_num + 3, 2, report.get_status_display())
+                    worksheet.write(row_num + 3, 3, report.created_at.strftime('%Y-%m-%d %H:%M'))
+                
+                # Adjust column widths
+                worksheet.set_column(0, 0, 30)  # Title
+                worksheet.set_column(1, 1, 15)  # Type
+                worksheet.set_column(2, 2, 15)  # Status
+                worksheet.set_column(3, 3, 20)  # Created At
+                
+                # Close the workbook
+                workbook.close()
+                
+                # Get the value of the BytesIO buffer and write it to the response
+                output.seek(0)
+                response = HttpResponse(
+                    output.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename="reports_export.xlsx"'
+                return response
+            except Exception as e:
+                messages.error(request, f'Error generating Excel file: {str(e)}')
+                return redirect('analyst_dashboard')
+            
+        elif format_type == 'csv':
+            try:
+                # Create a CSV response
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="reports_export.csv"'
+                
+                # Create a CSV writer
+                writer = csv.writer(response)
+                
+                # Write the header row
+                writer.writerow(['Title', 'Type', 'Status', 'Created At'])
+                
+                # Write the data rows
+                for report in reports:
+                    writer.writerow([
+                        report.title,
+                        report.get_report_type_display(),
+                        report.get_status_display(),
+                        report.created_at.strftime('%Y-%m-%d %H:%M')
+                    ])
+                
+                return response
+            except Exception as e:
+                messages.error(request, f'Error generating CSV file: {str(e)}')
+                return redirect('analyst_dashboard')
+        
+        else:
+            messages.error(request, 'Invalid export format specified.')
+            return redirect('analyst_dashboard')
+            
+    except Exception as e:
+        messages.error(request, f'Error exporting reports: {str(e)}')
+        return redirect('analyst_dashboard')
+
+@login_required
+@role_required(['analyst', 'marketer', 'researcher'])
+def create_report(request):
+    """Create a new report."""
+    if request.method == 'POST':
+        # Handle form submission for creating a new report
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        report_type = request.POST.get('report_type')
+        
+        # Create the report
+        report = Report.objects.create(
+            title=title,
+            content=content,
+            report_type=report_type,
+            author=request.user,
+            status='draft'
+        )
+        
+        messages.success(request, 'Report created successfully!')
+        return redirect('view_report', report_id=report.id)
+    
+    # Get the user's display name
+    user_display_name = request.user.get_full_name() or request.user.username
+    
+    context = {
+        'user_profile': request.user.userprofile,
+        'user_display_name': user_display_name,
+        'report_types': Report.REPORT_TYPES,
+    }
+    
+    return render(request, 'users/create_report.html', context)

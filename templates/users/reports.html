@@ -8,9 +8,9 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-file-alt me-2"></i>Reports Dashboard</h2>
-                <button class="btn btn-primary">
+                <a href="{% url 'analysis' %}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Generate New Report
-                </button>
+                </a>
             </div>
 
             <div class="row">
@@ -84,30 +84,30 @@
                             <div class="row g-4">
                                 <div class="col-md-3">
                                     <div class="d-grid">
-                                        <button class="btn btn-outline-primary">
+                                        <a href="#" class="btn btn-outline-primary" id="pdfExportBtn">
                                             <i class="fas fa-file-pdf me-2"></i>PDF Export
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="d-grid">
-                                        <button class="btn btn-outline-primary">
+                                        <a href="#" class="btn btn-outline-primary" id="excelExportBtn">
                                             <i class="fas fa-file-excel me-2"></i>Excel Export
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="d-grid">
-                                        <button class="btn btn-outline-primary">
+                                        <a href="#" class="btn btn-outline-primary" id="csvExportBtn">
                                             <i class="fas fa-file-csv me-2"></i>CSV Export
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="d-grid">
-                                        <button class="btn btn-outline-primary">
+                                        <a href="#" class="btn btn-outline-primary" id="printReportBtn">
                                             <i class="fas fa-print me-2"></i>Print Report
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -160,4 +160,162 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the export buttons
+        const pdfExportBtn = document.getElementById('pdfExportBtn');
+        const excelExportBtn = document.getElementById('excelExportBtn');
+        const csvExportBtn = document.getElementById('csvExportBtn');
+        const printReportBtn = document.getElementById('printReportBtn');
+        
+        // Add click event listeners to the export buttons
+        pdfExportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportReport('pdf');
+        });
+        
+        excelExportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportReport('excel');
+        });
+        
+        csvExportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportReport('csv');
+        });
+        
+        printReportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            printReport();
+        });
+        
+        // Function to export reports in different formats
+        function exportReport(format) {
+            // Show a loading indicator
+            showLoadingIndicator();
+            
+            // Make an AJAX request to the server to generate the export
+            fetch(`/export-report/?format=${format}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Export failed');
+            })
+            .then(blob => {
+                // Create a download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                // Set the filename based on the format
+                const filename = `report_export.${format}`;
+                a.download = filename;
+                
+                // Append to the document, click it, and remove it
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                
+                // Hide the loading indicator
+                hideLoadingIndicator();
+                
+                // Show a success message
+                showNotification('Export successful', 'Your report has been exported successfully.', 'success');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                hideLoadingIndicator();
+                showNotification('Export failed', 'There was an error exporting your report. Please try again.', 'error');
+            });
+        }
+        
+        // Function to print the report
+        function printReport() {
+            window.print();
+        }
+        
+        // Function to show a loading indicator
+        function showLoadingIndicator() {
+            // Create a loading overlay if it doesn't exist
+            if (!document.getElementById('loadingOverlay')) {
+                const overlay = document.createElement('div');
+                overlay.id = 'loadingOverlay';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                overlay.style.display = 'flex';
+                overlay.style.justifyContent = 'center';
+                overlay.style.alignItems = 'center';
+                overlay.style.zIndex = '9999';
+                
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner-border text-light';
+                spinner.style.width = '3rem';
+                spinner.style.height = '3rem';
+                
+                const text = document.createElement('div');
+                text.className = 'text-light ms-3';
+                text.textContent = 'Exporting...';
+                
+                overlay.appendChild(spinner);
+                overlay.appendChild(text);
+                document.body.appendChild(overlay);
+            } else {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+            }
+        }
+        
+        // Function to hide the loading indicator
+        function hideLoadingIndicator() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        // Function to show a notification
+        function showNotification(title, message, type = 'info') {
+            // Create a notification element
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-' + (type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info') + ' alert-dismissible fade show';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            
+            // Add the notification content
+            notification.innerHTML = `
+                <strong>${title}</strong><br>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Add the notification to the document
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 150);
+            }, 5000);
+        }
+    });
+</script>
 {% endblock %} 

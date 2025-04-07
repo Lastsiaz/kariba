@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Analyst Dashboard</h2>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Export Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Export Reports</h5>
+        </div>
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <a href="{% url 'export_report' %}?format=pdf" class="btn btn-danger export-btn" data-format="pdf">
+                    <i class="fas fa-file-pdf"></i> Export as PDF
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </a>
+                <a href="{% url 'export_report' %}?format=excel" class="btn btn-success export-btn" data-format="excel">
+                    <i class="fas fa-file-excel"></i> Export as Excel
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </a>
+                <a href="{% url 'export_report' %}?format=csv" class="btn btn-primary export-btn" data-format="csv">
+                    <i class="fas fa-file-csv"></i> Export as CSV
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Section -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Your Reports</h5>
+            <a href="{% url 'create_report' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Generate New Report
+            </a>
+        </div>
+        <div class="card-body">
+            {% if reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                            <tr>
+                                <td>{{ report.title }}</td>
+                                <td>{{ report.get_report_type_display }}</td>
+                                <td>
+                                    <span class="badge {% if report.status == 'completed' %}bg-success{% elif report.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'view_report' report.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'edit_report' report.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No reports found. Click "Generate New Report" to create one.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers for export buttons
+        const exportButtons = document.querySelectorAll('.export-btn');
+        exportButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Show loading spinner
+                const spinner = this.querySelector('.spinner-border');
+                spinner.classList.remove('d-none');
+                
+                // Disable the button
+                this.disabled = true;
+                
+                // Log the export action
+                console.log(`Exporting reports as ${this.dataset.format}...`);
+                
+                // Allow the link to work normally
+                // No need to prevent default or stop propagation
+            });
+        });
+        
+        // Auto-dismiss alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %} 
