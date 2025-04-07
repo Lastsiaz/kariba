@@ -47,15 +47,30 @@
         margin-bottom: 15px;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-left-width: 6px;
     }
     .metric-value {
         font-size: 24px;
         font-weight: bold;
         color: #25D366;
+        transition: color 0.3s ease;
+    }
+    .metric-card:hover .metric-value {
+        color: #128C7E;
     }
     .metric-label {
         color: #6c757d;
         font-size: 14px;
+        transition: color 0.3s ease;
+    }
+    .metric-card:hover .metric-label {
+        color: #495057;
     }
     .report-card {
         border: none;
@@ -100,7 +115,7 @@
                 <img src="{% static 'images/default-profile.svg' %}" alt="Default Profile" class="profile-picture">
             {% endif %}
             <div>
-                <h2 class="mb-1">Welcome, {{ user.get_full_name|default:user.username }}</h2>
+                <h2 class="mb-1">Welcome, {{ user_display_name }}</h2>
                 <p class="text-muted mb-0">Role: {{ user.userprofile.get_role_display }}</p>
             </div>
         </div>
@@ -166,42 +181,54 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ system_uptime }}</div>
-                        <div class="metric-label">System Uptime</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Time since last system boot">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ system_uptime }}</div>
+                            <div class="metric-label">System Uptime</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ cpu_usage }}%</div>
-                        <div class="metric-label">CPU Usage</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current CPU utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ cpu_usage }}%</div>
+                            <div class="metric-label">CPU Usage</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ memory_usage }}%</div>
-                        <div class="metric-label">Memory Usage</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current memory utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ memory_usage }}%</div>
+                            <div class="metric-label">Memory Usage</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ disk_usage }}%</div>
-                        <div class="metric-label">Disk Usage</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current disk space utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ disk_usage }}%</div>
+                            <div class="metric-label">Disk Usage</div>
+                        </div>
+                    </a>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ active_users }}</div>
-                        <div class="metric-label">Active Users</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Users who logged in within the last 24 hours">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ active_users }}</div>
+                            <div class="metric-label">Active Users</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-6">
-                    <div class="metric-card">
-                        <div class="metric-value">{{ total_requests }}</div>
-                        <div class="metric-label">Total Requests (24h)</div>
-                    </div>
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Total HTTP requests in the last 24 hours">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ total_requests }}</div>
+                            <div class="metric-label">Total Requests (24h)</div>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -274,10 +301,10 @@
                         {% for activity in recent_activities %}
                         <tr>
                             <td>
-                                {% if activity.user != 'System' %}
-                                    {{ activity.user.get_full_name|default:activity.user.username }}
-                                {% else %}
+                                {% if activity.user == 'System' %}
                                     System
+                                {% else %}
+                                    {{ activity.user.get_full_name|default:activity.user.username }}
                                 {% endif %}
                             </td>
                             <td>
@@ -289,11 +316,19 @@
                                     <a href="{% url 'campaign_list' %}" class="text-decoration-none">{{ activity.action }}</a>
                                 {% elif activity.action_type == 'analysis' %}
                                     <a href="{% url 'analysis_list' %}" class="text-decoration-none">{{ activity.action }}</a>
+                                {% elif activity.action_type == 'system' %}
+                                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="System boot time">{{ activity.action }}</a>
                                 {% else %}
                                     {{ activity.action }}
                                 {% endif %}
                             </td>
-                            <td>{{ activity.time|timesince }} ago</td>
+                            <td>
+                                {% if activity.action_type == 'system' %}
+                                    {{ activity.time|date:"F j, Y, g:i a" }}
+                                {% else %}
+                                    {{ activity.time|timesince }} ago
+                                {% endif %}
+                            </td>
                             <td>
                                 <span class="badge {% if activity.status == 'completed' %}bg-success{% elif activity.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
                                     {{ activity.status|title }}
@@ -315,8 +350,12 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add any admin-specific JavaScript here
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 </script>
 {% endblock %} 

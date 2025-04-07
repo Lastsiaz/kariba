@@ -40,4 +40,40 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('id_role');
+        const departmentSelect = document.getElementById('id_department');
+        
+        // Function to update department based on role
+        function updateDepartment() {
+            const role = roleSelect.value;
+            
+            // Set department based on role
+            if (role === 'admin') {
+                departmentSelect.value = 'Administration';
+            } else if (role === 'analyst') {
+                departmentSelect.value = 'Data Analytics';
+            } else if (role === 'marketer') {
+                departmentSelect.value = 'Marketing';
+            } else if (role === 'researcher') {
+                departmentSelect.value = 'Research';
+            } else {
+                departmentSelect.value = 'General';
+            }
+            
+            // Disable department select since it's automatically set
+            departmentSelect.disabled = true;
+        }
+        
+        // Update department when role changes
+        roleSelect.addEventListener('change', updateDepartment);
+        
+        // Initial update
+        updateDepartment();
+    });
+</script>
 {% endblock %} 

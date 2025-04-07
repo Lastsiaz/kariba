@@ -9,6 +9,7 @@ def get_role_choices():
         ('admin', 'Admin'),
         ('analyst', 'Analyst'),
         ('marketer', 'Marketer'),
+        ('researcher', 'Researcher'),
         ('general_user', 'General User'),
     ]
 
@@ -102,9 +103,10 @@ class UserUpdateForm(forms.ModelForm):
             self.fields[field].widget.attrs.update({'class': 'form-control'})
 
 class UserProfileUpdateForm(forms.ModelForm):
-    department = forms.CharField(
+    department = forms.ChoiceField(
+        choices=UserProfile.DEPARTMENT_CHOICES,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
     role = forms.ChoiceField(
         choices=get_role_choices(),
@@ -136,11 +138,32 @@ class UserProfileUpdateForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        department = cleaned_data.get('department')
+        
+        # Ensure department matches role
+        if role and department:
+            if role == 'admin' and department != 'Administration':
+                self.add_error('department', 'Administrators must be in the Administration department.')
+            elif role == 'analyst' and department != 'Data Analytics':
+                self.add_error('department', 'Analysts must be in the Data Analytics department.')
+            elif role == 'marketer' and department != 'Marketing':
+                self.add_error('department', 'Marketers must be in the Marketing department.')
+            elif role == 'researcher' and department != 'Research':
+                self.add_error('department', 'Researchers must be in the Research department.')
+            elif role == 'general_user' and department != 'General':
+                self.add_error('department', 'General users must be in the General department.')
+        
         return cleaned_data
 
 class AdminUserRegistrationForm(UserRegistrationForm):
     role = forms.ChoiceField(
         choices=get_role_choices(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    department = forms.ChoiceField(
+        choices=UserProfile.DEPARTMENT_CHOICES,
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -150,4 +173,57 @@ class AdminUserRegistrationForm(UserRegistrationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['role'].choices = get_role_choices() 
+        self.fields['role'].choices = get_role_choices()
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        department = cleaned_data.get('department')
+        
+        # Ensure department matches role
+        if role and department:
+            if role == 'admin' and department != 'Administration':
+                self.add_error('department', 'Administrators must be in the Administration department.')
+            elif role == 'analyst' and department != 'Data Analytics':
+                self.add_error('department', 'Analysts must be in the Data Analytics department.')
+            elif role == 'marketer' and department != 'Marketing':
+                self.add_error('department', 'Marketers must be in the Marketing department.')
+            elif role == 'researcher' and department != 'Research':
+                self.add_error('department', 'Researchers must be in the Research department.')
+            elif role == 'general_user' and department != 'General':
+                self.add_error('department', 'General users must be in the General department.')
+        
+        return cleaned_data
+        
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        
+        if commit:
+            user.save()
+            
+            # Create or update the user profile
+            role = self.cleaned_data['role']
+            department = self.cleaned_data['department']
+            
+            # Ensure department matches role
+            if role == 'admin':
+                department = 'Administration'
+            elif role == 'analyst':
+                department = 'Data Analytics'
+            elif role == 'marketer':
+                department = 'Marketing'
+            elif role == 'researcher':
+                department = 'Research'
+            else:
+                department = 'General'
+                
+            UserProfile.objects.create(
+                user=user,
+                role=role,
+                department=department
+            )
+            
+        return user 

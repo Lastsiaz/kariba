@@ -33,7 +33,8 @@ class UserProfile(models.Model):
     ]
     
     DEPARTMENT_CHOICES = [
-        ('IT', 'Information Technology'),
+        ('Administration', 'Administration'),
+        ('Data Analytics', 'Data Analytics'),
         ('Marketing', 'Marketing'),
         ('Research', 'Research'),
         ('General', 'General'),

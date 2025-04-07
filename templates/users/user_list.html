@@ -32,7 +32,7 @@
                             <td>{{ profile.user.get_full_name }}</td>
                             <td>{{ profile.user.email }}</td>
                             <td>
-                                <span class="badge bg-{% if profile.role == 'admin' %}danger{% elif profile.role == 'analyst' %}primary{% elif profile.role == 'researcher' %}success{% else %}secondary{% endif %}">
+                                <span class="badge bg-{% if profile.role == 'admin' %}danger{% elif profile.role == 'analyst' %}primary{% elif profile.role == 'researcher' %}success{% elif profile.role == 'marketer' %}info{% else %}secondary{% endif %}">
                                     {{ profile.get_role_display }}
                                 </span>
                             </td>

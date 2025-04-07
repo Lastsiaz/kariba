@@ -42,6 +42,28 @@ def admin_register_user(request):
             try:
                 with transaction.atomic():
                     user = form.save()
+                    
+                    # Get the user profile
+                    user_profile = UserProfile.objects.get(user=user)
+                    
+                    # Ensure department matches role
+                    role = user_profile.role
+                    if role == 'admin' and user_profile.department != 'Administration':
+                        user_profile.department = 'Administration'
+                        user_profile.save()
+                    elif role == 'analyst' and user_profile.department != 'Data Analytics':
+                        user_profile.department = 'Data Analytics'
+                        user_profile.save()
+                    elif role == 'marketer' and user_profile.department != 'Marketing':
+                        user_profile.department = 'Marketing'
+                        user_profile.save()
+                    elif role == 'researcher' and user_profile.department != 'Research':
+                        user_profile.department = 'Research'
+                        user_profile.save()
+                    elif role == 'general_user' and user_profile.department != 'General':
+                        user_profile.department = 'General'
+                        user_profile.save()
+                    
                     messages.success(request, 'User registered successfully!')
                     return redirect('user_list')
             except Exception as e:
@@ -93,10 +115,30 @@ def profile(request):
 @login_required
 @admin_required
 def user_list(request):
-    if not request.user.userprofile.is_admin:
-        messages.error(request, 'You do not have permission to access this page.')
-        return redirect('dashboard')
-    users = UserProfile.objects.all()
+    # Get all users with their profiles
+    users = UserProfile.objects.all().select_related('user')
+    
+    # Ensure all users have the correct department based on their role
+    for profile in users:
+        if profile.role == 'admin' and profile.department != 'Administration':
+            profile.department = 'Administration'
+            profile.save()
+        elif profile.role == 'analyst' and profile.department != 'Data Analytics':
+            profile.department = 'Data Analytics'
+            profile.save()
+        elif profile.role == 'marketer' and profile.department != 'Marketing':
+            profile.department = 'Marketing'
+            profile.save()
+        elif profile.role == 'researcher' and profile.department != 'Research':
+            profile.department = 'Research'
+            profile.save()
+        elif profile.role == 'general_user' and profile.department != 'General':
+            profile.department = 'General'
+            profile.save()
+    
+    # Refresh the users list after updates
+    users = UserProfile.objects.all().select_related('user')
+    
     return render(request, 'users/user_list.html', {'users': users})
 
 @login_required
@@ -119,8 +161,33 @@ def edit_user(request, user_id):
             
             if u_form.is_valid() and p_form.is_valid():
                 with transaction.atomic():
+                    # Save user data
                     u_form.save()
-                    p_form.save()
+                    
+                    # Save profile data
+                    profile = p_form.save(commit=False)
+                    
+                    # Ensure department matches role
+                    role = p_form.cleaned_data['role']
+                    if role == 'admin':
+                        profile.department = 'Administration'
+                    elif role == 'analyst':
+                        profile.department = 'Data Analytics'
+                    elif role == 'marketer':
+                        profile.department = 'Marketing'
+                    elif role == 'researcher':
+                        profile.department = 'Research'
+                    else:
+                        profile.department = 'General'
+                    
+                    # Save the profile with the updated department
+                    profile.save()
+                    
+                    # Save profile picture if provided
+                    if 'profile_picture' in request.FILES:
+                        profile.profile_picture = request.FILES['profile_picture']
+                        profile.save()
+                
                 messages.success(request, 'User updated successfully!')
                 return redirect('user_list')
             else:
@@ -180,13 +247,54 @@ def delete_user(request, user_id):
 def dashboard(request):
     user_profile = request.user.userprofile
     
-    # Debug print to check role
-    print(f"User role: {user_profile.role}")
+    # Debug print to check role and department
+    print(f"User role: {user_profile.role}, Department: {user_profile.department}")
+    
+    # Ensure department matches role
+    if user_profile.role == 'admin' and user_profile.department != 'Administration':
+        user_profile.department = 'Administration'
+        user_profile.save()
+    elif user_profile.role == 'analyst' and user_profile.department != 'Data Analytics':
+        user_profile.department = 'Data Analytics'
+        user_profile.save()
+    elif user_profile.role == 'marketer' and user_profile.department != 'Marketing':
+        user_profile.department = 'Marketing'
+        user_profile.save()
+    elif user_profile.role == 'researcher' and user_profile.department != 'Research':
+        user_profile.department = 'Research'
+        user_profile.save()
+    elif user_profile.role == 'general_user' and user_profile.department != 'General':
+        user_profile.department = 'General'
+        user_profile.save()
+    
+    # Get user's display name
+    user_display_name = request.user.get_full_name() or request.user.username
     
     # Redirect based on role
     if user_profile.role == 'admin':
         # Admin dashboard data
         total_users = User.objects.count()
+        
+        # Ensure all users have the correct department based on their role
+        all_profiles = UserProfile.objects.all()
+        for profile in all_profiles:
+            if profile.role == 'admin' and profile.department != 'Administration':
+                profile.department = 'Administration'
+                profile.save()
+            elif profile.role == 'analyst' and profile.department != 'Data Analytics':
+                profile.department = 'Data Analytics'
+                profile.save()
+            elif profile.role == 'marketer' and profile.department != 'Marketing':
+                profile.department = 'Marketing'
+                profile.save()
+            elif profile.role == 'researcher' and profile.department != 'Research':
+                profile.department = 'Research'
+                profile.save()
+            elif profile.role == 'general_user' and profile.department != 'General':
+                profile.department = 'General'
+                profile.save()
+        
+        # Count users by role after ensuring departments are correct
         total_analysts = UserProfile.objects.filter(role='analyst').count()
         total_marketers = UserProfile.objects.filter(role='marketer').count()
         total_researchers = UserProfile.objects.filter(role='researcher').count()
@@ -218,6 +326,7 @@ def dashboard(request):
         recent_activities.append({
             'user': 'System',
             'action': 'System initialized',
+            'action_type': 'system',
             'time': boot_time,
             'status': 'completed'
         })
@@ -227,55 +336,11 @@ def dashboard(request):
             last_login__gte=timezone.now() - timedelta(days=1)
         ).order_by('-last_login')
         
-        for user in recent_logins:
+        for user_obj in recent_logins:
             recent_activities.append({
-                'user': user,
-                'action': 'User logged in',
-                'action_type': 'user_management',
-                'time': user.last_login,
-                'status': 'completed'
-            })
-        
-        # Add report creation activities
-        recent_report_creations = Report.objects.filter(
-            created_at__gte=timezone.now() - timedelta(days=1)
-        ).order_by('-created_at')
-        
-        for report in recent_report_creations:
-            recent_activities.append({
-                'user': report.author,
-                'action': f'Created report: {report.title}',
-                'action_type': 'report',
-                'time': report.created_at,
-                'status': 'completed'
-            })
-        
-        # Add campaign activities
-        recent_campaigns = Campaign.objects.filter(
-            created_at__gte=timezone.now() - timedelta(days=1)
-        ).order_by('-created_at')
-        
-        for campaign in recent_campaigns:
-            recent_activities.append({
-                'user': campaign.created_by,
-                'action': f'Created campaign: {campaign.name}',
-                'action_type': 'campaign',
-                'time': campaign.created_at,
-                'status': 'completed'
-            })
-        
-        # Add analysis activities
-        recent_analyses = Report.objects.filter(
-            created_at__gte=timezone.now() - timedelta(days=1),
-            report_type='analysis'
-        ).order_by('-created_at')
-        
-        for analysis in recent_analyses:
-            recent_activities.append({
-                'user': analysis.author,
-                'action': f'Created analysis: {analysis.title}',
-                'action_type': 'analysis',
-                'time': analysis.created_at,
+                'user': user_obj,
+                'action': 'Logged in',
+                'time': user_obj.last_login,
                 'status': 'completed'
             })
         
@@ -295,6 +360,7 @@ def dashboard(request):
             'active_users': active_users,
             'recent_reports': recent_reports,
             'recent_activities': recent_activities,
+            'user_display_name': user_display_name,
         }
         return render(request, 'users/admin_dashboard.html', context)
     elif user_profile.role == 'researcher':
@@ -305,7 +371,27 @@ def dashboard(request):
         return redirect('marketer_dashboard')
     else:
         # Default dashboard for other users
-        return render(request, 'users/dashboard.html')
+        # Get basic stats for the default dashboard
+        total_analyses = Report.objects.filter(
+            created_by=request.user
+        ).count()
+        
+        # Calculate average sentiment (placeholder)
+        avg_sentiment = 0.75
+        
+        # Get analyses done today
+        analyses_today = Report.objects.filter(
+            created_by=request.user,
+            created_at__date=timezone.now().date()
+        ).count()
+        
+        context = {
+            'total_analyses': total_analyses,
+            'avg_sentiment': avg_sentiment,
+            'analyses_today': analyses_today,
+            'user_display_name': user_display_name,
+        }
+        return render(request, 'dashboard.html', context)
 
 @login_required
 @role_required(['analyst'])
@@ -499,6 +585,9 @@ def all_reports(request):
 def researcher_dashboard(request):
     user_profile = request.user.userprofile
     
+    # Get user's display name
+    user_display_name = request.user.get_full_name() or request.user.username
+    
     # Get research statistics
     active_projects = Campaign.objects.filter(
         created_by=request.user,
@@ -542,6 +631,7 @@ def researcher_dashboard(request):
         'total_publications': total_publications,
         'recent_projects': recent_projects,
         'recent_publications': recent_publications,
+        'user_display_name': user_display_name,
     }
     
     return render(request, 'users/researcher_dashboard.html', context)
@@ -563,3 +653,46 @@ def data_sources(request):
     }
     
     return render(request, 'users/data_sources.html', context)
+
+@login_required
+@role_required('marketer')
+def marketer_dashboard(request):
+    user_profile = request.user.userprofile
+    
+    # Get user's display name
+    user_display_name = request.user.get_full_name() or request.user.username
+    
+    # Get marketing statistics
+    total_campaigns = Campaign.objects.filter(
+        created_by=request.user,
+        campaign_type='marketing'
+    ).count()
+    
+    active_campaigns = Campaign.objects.filter(
+        created_by=request.user,
+        campaign_type='marketing',
+        status='active'
+    ).count()
+    
+    completed_campaigns = Campaign.objects.filter(
+        created_by=request.user,
+        campaign_type='marketing',
+        status='completed'
+    ).count()
+    
+    # Get recent campaigns
+    recent_campaigns = Campaign.objects.filter(
+        created_by=request.user,
+        campaign_type='marketing'
+    ).order_by('-created_at')[:5]
+    
+    context = {
+        'user_profile': user_profile,
+        'total_campaigns': total_campaigns,
+        'active_campaigns': active_campaigns,
+        'completed_campaigns': completed_campaigns,
+        'recent_campaigns': recent_campaigns,
+        'user_display_name': user_display_name,
+    }
+    
+    return render(request, 'users/marketer_dashboard.html', context)
