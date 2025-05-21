@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analysis Results - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .results-container {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .metric-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .chart-container {
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+    .table-container {
+        margin-top: 2rem;
+    }
+    .sentiment-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    .sentiment-positive {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .sentiment-neutral {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .sentiment-negative {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="results-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Sentiment Analysis Results</h2>
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="exportResults('csv')">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </button>
+                <button class="btn btn-outline-primary" onclick="exportResults('json')">
+                    <i class="fas fa-code me-2"></i>Export JSON
+                </button>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value">{{ overall_sentiment|floatformat:2 }}</div>
+                    <div class="metric-label">Overall Sentiment</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value">{{ positive_percentage|floatformat:1 }}%</div>
+                    <div class="metric-label">Positive</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value">{{ neutral_percentage|floatformat:1 }}%</div>
+                    <div class="metric-label">Neutral</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value">{{ negative_percentage|floatformat:1 }}%</div>
+                    <div class="metric-label">Negative</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="sentimentTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="sentimentDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3 class="mb-4">Recent Analyses</h3>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Source</th>
+                            <th>Sentiment</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analysis in recent_analyses %}
+                        <tr>
+                            <td>{{ analysis.text|truncatechars:50 }}</td>
+                            <td>{{ analysis.source_type }}</td>
+                            <td>
+                                <span class="sentiment-badge {% if analysis.label == 'Positive' %}sentiment-positive{% elif analysis.label == 'Negative' %}sentiment-negative{% else %}sentiment-neutral{% endif %}">
+                                    {{ analysis.label }}
+                                </span>
+                            </td>
+                            <td>{{ analysis.score|floatformat:2 }}</td>
+                            <td>{{ analysis.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Sentiment Trend Chart
+const trendCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trend_dates|safe }},
+        datasets: [{
+            label: 'Sentiment Score',
+            data: {{ trend_scores|safe }},
+            borderColor: '#0d6efd',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Sentiment Trend Over Time'
+            }
+        }
+    }
+});
+
+// Sentiment Distribution Chart
+const distributionCtx = document.getElementById('sentimentDistributionChart').getContext('2d');
+new Chart(distributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+            data: [
+                {{ positive_percentage }},
+                {{ neutral_percentage }},
+                {{ negative_percentage }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Sentiment Distribution'
+            }
+        }
+    }
+});
+
+function exportResults(format) {
+    window.location.href = `{% url 'sentiment:export_results' %}?format=${format}`;
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Researcher Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        background: linear-gradient(45deg, #25D366, #128C7E);
+        color: white;
+    }
+    .stat-card .card-title {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .stat-card .card-text {
+        color: white;
+    }
+    .welcome-section {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .profile-picture {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #25D366;
+        margin-right: 20px;
+    }
+    .research-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .research-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .research-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .research-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-in-progress {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    .nav-link {
+        padding: 10px 15px;
+        color: #333;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+    .nav-link:hover {
+        background-color: #25D366;
+        color: white;
+        transform: translateY(-2px);
+    }
+    .nav-link i {
+        margin-right: 8px;
+    }
+    .progress {
+        height: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        background-color: #25D366;
+        transition: width 0.3s ease;
+    }
+    .table {
+        margin-bottom: 0;
+    }
+    .table th {
+        border-top: none;
+        background-color: #f8f9fa;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    /* Publication link styles */
+    .publication-link {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+    
+    .publication-link:hover {
+        color: #3498db;
+        text-decoration: underline;
+    }
+    
+    /* Make the entire row hoverable */
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    /* Style for the action buttons */
+    .btn-outline-primary, .btn-outline-success {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-primary:hover, .btn-outline-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="d-flex align-items-center">
+            {% if user.userprofile.profile_picture %}
+                <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+            {% else %}
+                <img src="{% static 'images/default-profile.svg' %}" alt="Default Profile" class="profile-picture">
+            {% endif %}
+            <div>
+                <h2 class="mb-1">Welcome, {{ user_display_name }}</h2>
+                <p class="text-muted mb-0">Role: Researcher</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <a href="{% url 'campaign' %}" class="nav-link">
+                <i class="fas fa-flask"></i> Research Projects
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'reports' %}" class="nav-link">
+                <i class="fas fa-file-alt"></i> Research Reports
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'reports' %}" class="nav-link">
+                <i class="fas fa-book"></i> Publications
+            </a>
+        </div>
+    </div>
+
+    <!-- Research Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Projects</h5>
+                    <h2 class="card-text">{{ active_projects }}</h2>
+                    <p class="text-white-50 mb-0">Current research</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Completed</h5>
+                    <h2 class="card-text">{{ completed_projects }}</h2>
+                    <p class="text-white-50 mb-0">Finished research</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Reports</h5>
+                    <h2 class="card-text">{{ total_reports }}</h2>
+                    <p class="text-white-50 mb-0">Research reports</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Publications</h5>
+                    <h2 class="card-text">{{ total_publications }}</h2>
+                    <p class="text-white-50 mb-0">Published work</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Research Projects -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Research Projects</h5>
+            <a href="{% url 'campaign' %}" class="btn btn-sm btn-outline-primary">View All Projects</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Project Title</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in recent_projects %}
+                        <tr>
+                            <td>{{ project.name }}</td>
+                            <td>
+                                <span class="research-status status-{{ project.status }}">
+                                    {{ project.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ project.start_date|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 75%">
+                                        75%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="#" class="btn btn-sm btn-outline-success">Edit</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No research projects available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Publications -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Publications</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for publication in recent_publications %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'view_report' publication.id %}" class="publication-link">
+                                    {{ publication.title }}
+                                </a>
+                            </td>
+                            <td>{{ publication.get_report_type_display }}</td>
+                            <td>{{ publication.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="research-status status-{{ publication.status }}">
+                                    {{ publication.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'view_report' publication.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="{% url 'edit_report' publication.id %}" class="btn btn-sm btn-outline-success">Edit</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No publications available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any researcher-specific JavaScript here
+});
+</script>
+{% endblock %} 

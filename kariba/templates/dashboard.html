@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .stats-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    .stats-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    .quick-action {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .quick-action:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .action-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #007bff;
+    }
+    .chart-container {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3">Welcome, {{ user_display_name }}!</h1>
+            <p class="text-muted">Here's an overview of your sentiment analysis system.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="location.href='{% url 'sentiment:analyze_text' %}'">
+                <i class="fas fa-plus me-2"></i>New Analysis
+            </button>
+        </div>
+    </div>
+
+    <!-- Basic Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stats-value">{{ total_analyses|default:0 }}</div>
+                <div class="stats-label">Total Analyses</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <div class="stats-value">{{ avg_sentiment|default:0|floatformat:2 }}</div>
+                <div class="stats-label">Average Sentiment</div>
+            </div>
+        </div>
+        {% if request.user.userprofile.role == 'data_analyst' %}
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stats-value">{{ analyses_today|default:0 }}</div>
+                <div class="stats-label">Analyses Today</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="stats-value">{{ response_time|default:0|floatformat:2 }}s</div>
+                <div class="stats-label">Avg Response Time</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="quick-action text-center">
+                <div class="action-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h5>Keyword Analysis</h5>
+                <p class="text-muted mb-3">Analyze text based on keywords</p>
+                <a href="{% url 'sentiment:keyword_list' %}" class="btn btn-outline-primary">Start Analysis</a>
+            </div>
+        </div>
+        {% if request.user.userprofile.role == 'data_analyst' %}
+        <div class="col-md-3">
+            <div class="quick-action text-center">
+                <div class="action-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h5>Reports</h5>
+                <p class="text-muted mb-3">View sentiment reports</p>
+                <a href="{% url 'sentiment:report_list' %}" class="btn btn-outline-primary">View Reports</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="quick-action text-center">
+                <div class="action-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <h5>Create Report</h5>
+                <p class="text-muted mb-3">Generate new report</p>
+                <a href="{% url 'sentiment:create_report' %}" class="btn btn-outline-primary">Create Report</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="quick-action text-center">
+                <div class="action-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h5>Manage Keywords</h5>
+                <p class="text-muted mb-3">Add or remove keywords</p>
+                <a href="{% url 'sentiment:keyword_list' %}" class="btn btn-outline-primary">Manage Keywords</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Charts Row -->
+    {% if request.user.userprofile.role == 'data_analyst' %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h5 class="mb-3">Sentiment Trend</h5>
+                <canvas id="sentimentTrendChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3">Distribution</h5>
+                <canvas id="sentimentDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if request.user.userprofile.role == 'data_analyst' %}
+<script>
+// Sentiment Trend Chart
+const trendCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trend_dates|safe|default:'[]' }},
+        datasets: [{
+            label: 'Sentiment Score',
+            data: {{ trend_scores|safe|default:'[]' }},
+            borderColor: '#007bff',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Sentiment Distribution Chart
+const distributionCtx = document.getElementById('sentimentDistributionChart').getContext('2d');
+new Chart(distributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+            data: [
+                {{ positive_percentage|default:0 }},
+                {{ neutral_percentage|default:0 }},
+                {{ negative_percentage|default:0 }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endif %}
+{% endblock %} 

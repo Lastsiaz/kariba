@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ result.query.title }} - Results{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 500px;
+    margin-bottom: 2rem;
+}
+
+.result-metadata {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.export-options {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.export-options.show {
+    display: block;
+}
+
+.insight-card {
+    transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.code-block {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 1rem;
+    font-family: monospace;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'analytics:dashboard' %}">Analytics</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'analytics:query_results' %}">Results</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ result.query.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Title and Actions -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ result.query.title }}</h2>
+            <p class="text-muted">{{ result.query.description }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'analytics:execute_query' result.query.id %}?auto_execute=true" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Re-run Query
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleExportOptions(event)">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <div class="export-options">
+                    <button class="btn btn-link" onclick="exportResults('csv')">CSV</button>
+                    <button class="btn btn-link" onclick="exportResults('json')">JSON</button>
+                    <button class="btn btn-link" onclick="exportResults('excel')">Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Details -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Execution Details</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{{ result.status_color }}">{{ result.status }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Duration</dt>
+                        <dd class="col-sm-8">{{ result.execution_time|floatformat:2 }}s</dd>
+                        
+                        <dt class="col-sm-4">Created</dt>
+                        <dd class="col-sm-8">{{ result.created_at|date:"M d, Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">{{ result.query.get_query_type_display }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Query Parameters</h5>
+                    <div class="code-block">
+                        <pre><code>{{ result.query.parameters|pprint }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualization Tabs -->
+    <div class="card">
+        <div class="card-body">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#chartView">
+                        <i class="fas fa-chart-bar"></i> Chart
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#insightsView">
+                        <i class="fas fa-lightbulb"></i> Insights
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tableView">
+                        <i class="fas fa-table"></i> Table
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#rawView">
+                        <i class="fas fa-code"></i> Raw Data
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-3">
+                <!-- Chart View -->
+                <div id="chartView" class="tab-pane fade show active">
+                    <div class="chart-container">
+                        <canvas id="resultChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Insights View -->
+                <div id="insightsView" class="tab-pane fade">
+                    <div class="row" id="insightsContainer">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Table View -->
+                <div id="tableView" class="tab-pane fade">
+                    <div class="table-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr id="tableHeaders">
+                                    <!-- Dynamically populated -->
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Raw Data View -->
+                <div id="rawView" class="tab-pane fade">
+                    <div class="code-block">
+                        <pre><code id="rawData">{{ chart_data|pprint }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@2.x/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.x/dist/chartjs-adapter-luxon.min.js"></script>
+
+<script>
+const chartData = {{ chart_data|safe }};
+let currentChart = null;
+
+function toggleExportOptions(event) {
+    event.stopPropagation();
+    const options = document.querySelector('.export-options');
+    options.classList.toggle('show');
+    
+    document.addEventListener('click', function closeExport(e) {
+        if (!options.contains(e.target)) {
+            options.classList.remove('show');
+            document.removeEventListener('click', closeExport);
+        }
+    });
+}
+
+async function exportResults(format) {
+    try {
+        window.location.href = `{% url 'analytics:export_result' result.id %}?format=${format}`;
+    } catch (error) {
+        alert('Error exporting results: ' + error.message);
+    }
+}
+
+function generateChartConfig() {
+    const queryType = '{{ result.query.query_type }}';
+    let config = {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '{{ result.query.title }}'
+                },
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    };
+    
+    switch (queryType) {
+        case 'keyword':
+            config.type = 'bar';
+            config.data = {
+                labels: Object.keys(chartData.sentiment_distribution),
+                datasets: [{
+                    label: 'Sentiment Distribution',
+                    data: Object.values(chartData.sentiment_distribution),
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            break;
+            
+        case 'trend':
+            config.type = 'line';
+            const dates = Object.keys(chartData.trends);
+            config.data = {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Positive',
+                        data: dates.map(date => chartData.trends[date].positive),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    },
+                    {
+                        label: 'Negative',
+                        data: dates.map(date => chartData.trends[date].negative),
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        fill: false
+                    },
+                    {
+                        label: 'Neutral',
+                        data: dates.map(date => chartData.trends[date].neutral),
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        fill: false
+                    }
+                ]
+            };
+            break;
+            
+        case 'comparison':
+            config.type = 'bar';
+            const criteria = chartData.criteria;
+            const datasets = ['positive', 'negative', 'neutral'].map((sentiment, index) => ({
+                label: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+                data: criteria.map(criterion => chartData.comparisons[criterion][sentiment] || 0),
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)'
+                ][index],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ][index],
+                borderWidth: 1
+            }));
+            
+            config.data = {
+                labels: criteria,
+                datasets: datasets
+            };
+            config.options.scales = {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true
+                }
+            };
+            break;
+            
+        case 'demographic':
+            config.type = 'bar';
+            const demographics = Object.keys(chartData.demographics);
+            config.data = {
+                labels: demographics,
+                datasets: [
+                    {
+                        label: 'Positive',
+                        data: demographics.map(demo => chartData.demographics[demo].positive),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Negative',
+                        data: demographics.map(demo => chartData.demographics[demo].negative),
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Neutral',
+                        data: demographics.map(demo => chartData.demographics[demo].neutral),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+            break;
+    }
+    
+    return config;
+}
+
+function generateInsights() {
+    const queryType = '{{ result.query.query_type }}';
+    const insights = [];
+    
+    switch (queryType) {
+        case 'keyword':
+            const total = Object.values(chartData.sentiment_distribution).reduce((a, b) => a + b, 0);
+            const sentiments = Object.entries(chartData.sentiment_distribution)
+                .sort((a, b) => b[1] - a[1]);
+            
+            insights.push({
+                title: 'Dominant Sentiment',
+                content: `${sentiments[0][0].charAt(0).toUpperCase() + sentiments[0][0].slice(1)} sentiment is dominant with ${((sentiments[0][1] / total) * 100).toFixed(1)}% of tweets.`,
+                icon: 'fas fa-star'
+            });
+            
+            insights.push({
+                title: 'Confidence Scores',
+                content: `Average confidence scores range from ${Math.min(...Object.values(chartData.confidence_scores)).toFixed(2)} to ${Math.max(...Object.values(chartData.confidence_scores)).toFixed(2)}.`,
+                icon: 'fas fa-chart-line'
+            });
+            break;
+            
+        case 'trend':
+            const dates = Object.keys(chartData.trends);
+            const latestDate = dates[dates.length - 1];
+            const earliestDate = dates[0];
+            
+            insights.push({
+                title: 'Trend Overview',
+                content: `Analysis covers ${dates.length} time periods from ${earliestDate} to ${latestDate}.`,
+                icon: 'fas fa-calendar'
+            });
+            break;
+            
+        case 'comparison':
+            const maxCriterion = Object.entries(chartData.comparisons)
+                .sort((a, b) => Object.values(b[1]).reduce((x, y) => x + y, 0) - Object.values(a[1]).reduce((x, y) => x + y, 0))[0];
+            
+            insights.push({
+                title: 'Most Active Criterion',
+                content: `"${maxCriterion[0]}" has the highest activity with ${Object.values(maxCriterion[1]).reduce((a, b) => a + b, 0)} tweets.`,
+                icon: 'fas fa-trophy'
+            });
+            break;
+            
+        case 'demographic':
+            const topDemographic = Object.entries(chartData.demographics)
+                .sort((a, b) => Object.values(b[1]).reduce((x, y) => x + y, 0) - Object.values(a[1]).reduce((x, y) => x + y, 0))[0];
+            
+            insights.push({
+                title: 'Leading Demographic',
+                content: `"${topDemographic[0]}" shows the highest engagement with ${Object.values(topDemographic[1]).reduce((a, b) => a + b, 0)} tweets.`,
+                icon: 'fas fa-users'
+            });
+            break;
+    }
+    
+    // Add insights to the container
+    const container = document.getElementById('insightsContainer');
+    container.innerHTML = insights.map(insight => `
+        <div class="col-md-6 mb-4">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="${insight.icon} fa-2x text-primary me-3"></i>
+                        <h5 class="card-title mb-0">${insight.title}</h5>
+                    </div>
+                    <p class="card-text">${insight.content}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateTable() {
+    const tableHeaders = document.getElementById('tableHeaders');
+    const tableBody = document.getElementById('tableBody');
+    const queryType = '{{ result.query.query_type }}';
+    
+    switch (queryType) {
+        case 'keyword':
+            tableHeaders.innerHTML = `
+                <th>Sentiment</th>
+                <th>Count</th>
+                <th>Confidence Score</th>
+            `;
+            
+            tableBody.innerHTML = Object.entries(chartData.sentiment_distribution)
+                .map(([sentiment, count]) => `
+                    <tr>
+                        <td>${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}</td>
+                        <td>${count}</td>
+                        <td>${chartData.confidence_scores[sentiment].toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            break;
+            
+        case 'trend':
+            tableHeaders.innerHTML = `
+                <th>Date</th>
+                <th>Positive</th>
+                <th>Negative</th>
+                <th>Neutral</th>
+            `;
+            
+            tableBody.innerHTML = Object.entries(chartData.trends)
+                .map(([date, counts]) => `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${counts.positive}</td>
+                        <td>${counts.negative}</td>
+                        <td>${counts.neutral}</td>
+                    </tr>
+                `).join('');
+            break;
+            
+        case 'comparison':
+            tableHeaders.innerHTML = `
+                <th>Criterion</th>
+                <th>Positive</th>
+                <th>Negative</th>
+                <th>Neutral</th>
+                <th>Total</th>
+            `;
+            
+            tableBody.innerHTML = Object.entries(chartData.comparisons)
+                .map(([criterion, counts]) => `
+                    <tr>
+                        <td>${criterion}</td>
+                        <td>${counts.positive || 0}</td>
+                        <td>${counts.negative || 0}</td>
+                        <td>${counts.neutral || 0}</td>
+                        <td>${Object.values(counts).reduce((a, b) => a + b, 0)}</td>
+                    </tr>
+                `).join('');
+            break;
+            
+        case 'demographic':
+            tableHeaders.innerHTML = `
+                <th>${chartData.demographic_field.charAt(0).toUpperCase() + chartData.demographic_field.slice(1)}</th>
+                <th>Positive</th>
+                <th>Negative</th>
+                <th>Neutral</th>
+                <th>Total</th>
+            `;
+            
+            tableBody.innerHTML = Object.entries(chartData.demographics)
+                .map(([demographic, counts]) => `
+                    <tr>
+                        <td>${demographic}</td>
+                        <td>${counts.positive}</td>
+                        <td>${counts.negative}</td>
+                        <td>${counts.neutral}</td>
+                        <td>${Object.values(counts).reduce((a, b) => a + b, 0)}</td>
+                    </tr>
+                `).join('');
+            break;
+    }
+}
+
+// Initialize visualizations
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize chart
+    const ctx = document.getElementById('resultChart').getContext('2d');
+    const config = generateChartConfig();
+    currentChart = new Chart(ctx, config);
+    
+    // Generate insights
+    generateInsights();
+    
+    // Populate table
+    populateTable();
+});
+</script>
+{% endblock %} 

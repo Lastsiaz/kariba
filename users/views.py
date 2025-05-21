@@ -755,6 +755,7 @@ def edit_report(request, report_id):
     
     return render(request, 'users/edit_report.html', context)
 
+@login_required
 @role_required(['admin', 'analyst', 'marketer', 'researcher'])
 def check_new_reports(request):
     """Check for new reports and return them as JSON."""

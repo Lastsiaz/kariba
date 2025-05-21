@@ -1,0 +1,145 @@
+{% load static %}
+
+<div class="image-controls">
+    <div class="control-group">
+        <label class="control-label">Brightness</label>
+        <input type="range" class="control-slider" id="brightness-slider" min="0" max="200" value="100">
+        <div class="control-value">Brightness: <span id="brightness-value">100</span>%</div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Contrast</label>
+        <input type="range" class="control-slider" id="contrast-slider" min="0" max="200" value="100">
+        <div class="control-value">Contrast: <span id="contrast-value">100</span>%</div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Saturation</label>
+        <input type="range" class="control-slider" id="saturation-slider" min="0" max="200" value="100">
+        <div class="control-value">Saturation: <span id="saturation-value">100</span>%</div>
+    </div>
+    <button class="reset-controls" id="reset-controls">Reset Adjustments</button>
+</div>
+
+<style>
+    .image-controls {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin: 15px auto;
+        width: 100%;
+        max-width: 250px;
+        border: 1px solid #dee2e6;
+    }
+    .control-group {
+        margin-bottom: 15px;
+    }
+    .control-group:last-child {
+        margin-bottom: 0;
+    }
+    .control-label {
+        display: block;
+        margin-bottom: 5px;
+        color: #495057;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .control-slider {
+        width: 100%;
+        height: 4px;
+        -webkit-appearance: none;
+        background: #dee2e6;
+        border-radius: 2px;
+        outline: none;
+        margin: 5px 0;
+    }
+    .control-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #25D366;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .control-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        background: #128C7E;
+    }
+    .control-value {
+        font-size: 12px;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 2px;
+    }
+    .reset-controls {
+        background: #25D366;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 5px;
+    }
+    .reset-controls:hover {
+        background: #128C7E;
+        transform: translateY(-1px);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePicturePreview = document.getElementById('profile-picture-preview');
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const contrastSlider = document.getElementById('contrast-slider');
+    const saturationSlider = document.getElementById('saturation-slider');
+    const brightnessValue = document.getElementById('brightness-value');
+    const contrastValue = document.getElementById('contrast-value');
+    const saturationValue = document.getElementById('saturation-value');
+    const resetControls = document.getElementById('reset-controls');
+
+    // Function to update image filters
+    function updateImageFilters() {
+        const brightness = brightnessSlider.value;
+        const contrast = contrastSlider.value;
+        const saturation = saturationSlider.value;
+        
+        profilePicturePreview.style.filter = `
+            brightness(${brightness}%) 
+            contrast(${contrast}%) 
+            saturate(${saturation}%)
+        `;
+    }
+
+    // Handle sliders
+    brightnessSlider.addEventListener('input', function() {
+        brightnessValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    contrastSlider.addEventListener('input', function() {
+        contrastValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    saturationSlider.addEventListener('input', function() {
+        saturationValue.textContent = this.value;
+        updateImageFilters();
+    });
+
+    // Reset controls
+    resetControls.addEventListener('click', function() {
+        brightnessSlider.value = 100;
+        contrastSlider.value = 100;
+        saturationSlider.value = 100;
+        brightnessValue.textContent = '100';
+        contrastValue.textContent = '100';
+        saturationValue.textContent = '100';
+        updateImageFilters();
+    });
+});
+</script> 

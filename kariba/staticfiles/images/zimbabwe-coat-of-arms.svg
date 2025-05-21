@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="60" height="60" fill="#f8f9fa"/>
+    
+    <!-- Star -->
+    <path d="M30 5 L36 25 L56 25 L38 37 L44 57 L30 43 L16 57 L22 37 L4 25 L24 25 Z" 
+          fill="#007bff"/>
+    
+    <!-- Circle -->
+    <circle cx="30" cy="30" r="20" stroke="#007bff" stroke-width="2" fill="none"/>
+    
+    <!-- Text -->
+    <text x="30" y="55" font-family="Arial" font-size="8" fill="#007bff" text-anchor="middle">
+        ZIMBABWE
+    </text>
+</svg> 

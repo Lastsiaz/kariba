@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Report - {{ report.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Edit Report</h4>
+                    <div>
+                        <a href="{% url 'view_report' report.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ report.title }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="report_type" class="form-label">Report Type</label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="research" {% if report.report_type == 'research' %}selected{% endif %}>Research</option>
+                                <option value="analysis" {% if report.report_type == 'analysis' %}selected{% endif %}>Analysis</option>
+                                <option value="marketing" {% if report.report_type == 'marketing' %}selected{% endif %}>Marketing</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="draft" {% if report.status == 'draft' %}selected{% endif %}>Draft</option>
+                                <option value="review" {% if report.status == 'review' %}selected{% endif %}>Under Review</option>
+                                <option value="published" {% if report.status == 'published' %}selected{% endif %}>Published</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="summary" class="form-label">Summary</label>
+                            <textarea class="form-control" id="summary" name="summary" rows="3">{{ report.summary }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="10">{{ report.content }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attachments" class="form-label">Attachments</label>
+                            <input type="file" class="form-control" id="attachments" name="attachments" multiple>
+                            <div class="form-text">You can select multiple files.</div>
+                        </div>
+                        
+                        {% if report.attachments.all %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Attachments</label>
+                            <ul class="list-group">
+                                {% for attachment in report.attachments.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ attachment.name }}
+                                    <div>
+                                        <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-attachment" data-id="{{ attachment.id }}">Delete</button>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle attachment deletion
+    const deleteButtons = document.querySelectorAll('.delete-attachment');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this attachment?')) {
+                const attachmentId = this.getAttribute('data-id');
+                // Here you would typically make an AJAX call to delete the attachment
+                // For now, we'll just remove the element from the DOM
+                this.closest('li').remove();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

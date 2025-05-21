@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit User - Kariba{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Style for select fields */
+    select.form-control {
+        display: block !important;
+        width: 100% !important;
+        padding: 0.375rem 0.75rem !important;
+        font-size: 1rem !important;
+        font-weight: 400 !important;
+        line-height: 1.5 !important;
+        color: #212529 !important;
+        background-color: #fff !important;
+        background-clip: padding-box !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.25rem !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+        -webkit-appearance: auto !important;
+        -moz-appearance: auto !important;
+        appearance: auto !important;
+    }
+
+    /* Style for select fields when focused */
+    select.form-control:focus {
+        color: #212529 !important;
+        background-color: #fff !important;
+        border-color: #86b7fe !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    /* Style for disabled select fields */
+    select.form-control:disabled {
+        background-color: #e9ecef !important;
+        opacity: 1 !important;
+    }
+
+    /* Style for form labels */
+    label {
+        display: inline-block !important;
+        margin-bottom: 0.5rem !important;
+        font-weight: 500 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Edit User</h2>
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" id="edit-user-form">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ u_form|crispy }}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_role" class="form-label">Role</label>
+                                    <select name="role" id="id_role" class="form-control">
+                                        <option value="admin" {% if user_profile.role == 'admin' %}selected{% endif %}>Administrator</option>
+                                        <option value="analyst" {% if user_profile.role == 'analyst' %}selected{% endif %}>Data Analyst</option>
+                                        <option value="marketer" {% if user_profile.role == 'marketer' %}selected{% endif %}>Marketer</option>
+                                        <option value="researcher" {% if user_profile.role == 'researcher' %}selected{% endif %}>Researcher</option>
+                                        <option value="general_user" {% if user_profile.role == 'general_user' %}selected{% endif %}>General User</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id_department" class="form-label">Department</label>
+                                    <select name="department" id="id_department" class="form-control">
+                                        <option value="Administration" {% if user_profile.department == 'Administration' %}selected{% endif %}>Administration</option>
+                                        <option value="Data Analytics" {% if user_profile.department == 'Data Analytics' %}selected{% endif %}>Data Analytics</option>
+                                        <option value="Marketing" {% if user_profile.department == 'Marketing' %}selected{% endif %}>Marketing</option>
+                                        <option value="Research" {% if user_profile.department == 'Research' %}selected{% endif %}>Research</option>
+                                        <option value="General" {% if user_profile.department == 'General' %}selected{% endif %}>General</option>
+                                    </select>
+                                </div>
+                                {% for field in p_form %}
+                                    {% if field.name != 'role' and field.name != 'department' %}
+                                        {{ field|as_crispy_field }}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Update User</button>
+                            <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the role select field
+    const roleSelect = document.getElementById('id_role');
+    if (roleSelect) {
+        // Remove any disabled attribute
+        roleSelect.removeAttribute('disabled');
+        
+        // Add change event listener
+        roleSelect.addEventListener('change', function() {
+            console.log('Role changed to:', this.value);
+            
+            // Update department based on role
+            const departmentSelect = document.getElementById('id_department');
+            if (departmentSelect) {
+                switch(this.value) {
+                    case 'admin':
+                        departmentSelect.value = 'Administration';
+                        break;
+                    case 'analyst':
+                        departmentSelect.value = 'Data Analytics';
+                        break;
+                    case 'researcher':
+                        departmentSelect.value = 'Research';
+                        break;
+                    case 'marketer':
+                        departmentSelect.value = 'Marketing';
+                        break;
+                    case 'general_user':
+                        departmentSelect.value = 'General';
+                        break;
+                }
+            }
+        });
+    }
+    
+    // Add form submit handler
+    const form = document.getElementById('edit-user-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const roleValue = roleSelect ? roleSelect.value : 'not found';
+            const departmentValue = document.getElementById('id_department') ? document.getElementById('id_department').value : 'not found';
+            console.log('Form submitting with - Role:', roleValue, 'Department:', departmentValue);
+        });
+    }
+});
+</script>
+{% endblock %} 

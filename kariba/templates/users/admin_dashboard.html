@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        background: linear-gradient(45deg, #25D366, #128C7E);
+        color: white;
+    }
+    .stat-card .card-title {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .stat-card .card-text {
+        color: white;
+    }
+    .welcome-section {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .profile-picture {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #25D366;
+        margin-right: 20px;
+    }
+    .metric-card {
+        background: #fff;
+        border-left: 4px solid #25D366;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-left-width: 6px;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #25D366;
+        transition: color 0.3s ease;
+    }
+    .metric-card:hover .metric-value {
+        color: #128C7E;
+    }
+    .metric-label {
+        color: #6c757d;
+        font-size: 14px;
+        transition: color 0.3s ease;
+    }
+    .metric-card:hover .metric-label {
+        color: #495057;
+    }
+    .report-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .report-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .report-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .report-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-in-progress {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    /* Notification styles */
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 9999;
+        max-width: 350px;
+        pointer-events: auto;
+    }
+    
+    .notification {
+        background-color: #fff;
+        border-left: 4px solid #ff9800;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        animation: slideIn 0.5s ease-out;
+        transition: all 0.3s ease;
+        opacity: 1;
+    }
+    
+    .notification:hover {
+        transform: translateX(5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .notification-icon {
+        margin-right: 15px;
+        font-size: 24px;
+        color: #ff9800;
+    }
+    
+    .notification-content {
+        flex-grow: 1;
+    }
+    
+    .notification-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .notification-message {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .notification-close {
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+        transition: color 0.2s ease;
+    }
+    
+    .notification-close:hover {
+        color: #343a40;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer">
+        <!-- Notifications will be dynamically added here -->
+    </div>
+    
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="d-flex align-items-center">
+            {% if user.userprofile.profile_picture %}
+                <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+            {% else %}
+                <img src="{% static 'images/default-profile.svg' %}" alt="Default Profile" class="profile-picture">
+            {% endif %}
+            <div>
+                <h2 class="mb-1">Welcome, {{ user_display_name }}</h2>
+                <p class="text-muted mb-0">Role: {{ user.userprofile.get_role_display }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Admin Dashboard</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'admin_register_user' %}" class="btn btn-primary me-2">
+                <i class="fas fa-user-plus"></i> Add New User
+            </a>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-users"></i> Manage Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2 class="card-text">{{ total_users }}</h2>
+                    <p class="text-white-50 mb-0">Registered users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Analysts</h5>
+                    <h2 class="card-text">{{ total_analysts }}</h2>
+                    <p class="text-white-50 mb-0">Data analysts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Marketers</h5>
+                    <h2 class="card-text">{{ total_marketers }}</h2>
+                    <p class="text-white-50 mb-0">Marketing team</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Researchers</h5>
+                    <h2 class="card-text">{{ total_researchers }}</h2>
+                    <p class="text-white-50 mb-0">Research team</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Performance Metrics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">System Performance Metrics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Time since last system boot">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ system_uptime }}</div>
+                            <div class="metric-label">System Uptime</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current CPU utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ cpu_usage }}%</div>
+                            <div class="metric-label">CPU Usage</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current memory utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ memory_usage }}%</div>
+                            <div class="metric-label">Memory Usage</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Current disk space utilization">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ disk_usage }}%</div>
+                            <div class="metric-label">Disk Usage</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Users who logged in within the last 24 hours">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ active_users }}</div>
+                            <div class="metric-label">Active Users</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="Total HTTP requests in the last 24 hours">
+                        <div class="metric-card">
+                            <div class="metric-value">{{ total_requests }}</div>
+                            <div class="metric-label">Total Requests (24h)</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Reports</h5>
+            <a href="{% url 'all_reports' %}" class="btn btn-sm btn-outline-primary">View All Reports</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Report Title</th>
+                            <th>Author</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recent_reports %}
+                        <tr>
+                            <td>{{ report.title }}</td>
+                            <td>{{ report.author.get_full_name|default:report.author.username }}</td>
+                            <td>{{ report.get_type_display }}</td>
+                            <td>{{ report.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="report-status status-{{ report.status }}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="#" class="btn btn-sm btn-outline-success">Download</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No reports available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in recent_activities %}
+                        <tr>
+                            <td>
+                                {% if activity.user == 'System' %}
+                                    System
+                                {% else %}
+                                    {{ activity.user.get_full_name|default:activity.user.username }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if activity.action_type == 'user_management' %}
+                                    <a href="{% url 'user_list' %}" class="text-decoration-none">{{ activity.action }}</a>
+                                {% elif activity.action_type == 'report' %}
+                                    <a href="{% url 'all_reports' %}" class="text-decoration-none">{{ activity.action }}</a>
+                                {% elif activity.action_type == 'campaign' %}
+                                    <a href="{% url 'campaign_list' %}" class="text-decoration-none">{{ activity.action }}</a>
+                                {% elif activity.action_type == 'analysis' %}
+                                    <a href="{% url 'analysis_list' %}" class="text-decoration-none">{{ activity.action }}</a>
+                                {% elif activity.action_type == 'system' %}
+                                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" data-bs-placement="top" title="System boot time">{{ activity.action }}</a>
+                                {% else %}
+                                    {{ activity.action }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if activity.action_type == 'system' %}
+                                    {{ activity.time|date:"F j, Y, g:i a" }}
+                                {% else %}
+                                    {{ activity.time|timesince }} ago
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if activity.status == 'completed' %}bg-success{% elif activity.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ activity.status|title }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No recent activity</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM content loaded');
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Notification system
+        const notificationContainer = document.getElementById('notificationContainer');
+        console.log('Notification container:', notificationContainer);
+        
+        if (!notificationContainer) {
+            console.error('Notification container not found!');
+            return;
+        }
+        
+        let notificationCount = 0;
+        
+        // Function to create a notification
+        function createNotification(title, message, type = 'info') {
+            console.log('Creating notification:', title, message, type);
+            
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.id = `notification-${notificationCount}`;
+            
+            // Set border color based on type
+            if (type === 'success') {
+                notification.style.borderLeftColor = '#4CAF50';
+            } else if (type === 'warning') {
+                notification.style.borderLeftColor = '#FF9800';
+            } else if (type === 'error') {
+                notification.style.borderLeftColor = '#F44336';
+            } else {
+                notification.style.borderLeftColor = '#2196F3';
+            }
+            
+            // Create notification content
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <div class="notification-close" onclick="closeNotification('notification-${notificationCount}')">
+                    <i class="fas fa-times"></i>
+                </div>
+            `;
+            
+            // Add to container
+            notificationContainer.appendChild(notification);
+            console.log('Notification added to container');
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                closeNotification(`notification-${notificationCount}`);
+            }, 5000);
+            
+            notificationCount++;
+        }
+        
+        // Function to close a notification
+        window.closeNotification = function(id) {
+            console.log('Closing notification:', id);
+            const notification = document.getElementById(id);
+            if (notification) {
+                notification.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    notification.remove();
+                    console.log('Notification removed');
+                }, 500);
+            } else {
+                console.error('Notification not found:', id);
+            }
+        };
+        
+        // Check for new reports periodically
+        function checkForNewReports() {
+            console.log('Checking for new reports');
+            // Make an AJAX call to the backend
+            fetch('{% url "check_new_reports" %}')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('New reports data:', data);
+                    if (data.count > 0) {
+                        // Show notifications for each new report
+                        data.new_reports.forEach(report => {
+                            createNotification(
+                                'New Report Available',
+                                `${report.author} has submitted a new ${report.type} report: "${report.title}"`,
+                                'info'
+                            );
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for new reports:', error);
+                });
+        }
+        
+        // Check for new reports every 30 seconds
+        setInterval(checkForNewReports, 30000);
+        
+        // Check for new reports immediately on page load
+        checkForNewReports();
+        
+        // Display a test notification after 2 seconds
+        setTimeout(() => {
+            console.log('Displaying test notification');
+            createNotification(
+                'Test Notification',
+                'This is a test notification to verify the notification system is working.',
+                'info'
+            );
+        }, 2000);
+    });
+</script>
+{% endblock %} 

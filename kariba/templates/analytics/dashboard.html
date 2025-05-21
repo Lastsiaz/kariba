@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .query-card {
+        transition: transform 0.2s;
+    }
+    .query-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">Analytics Dashboard</h1>
+                <a href="{% url 'analytics:create_query' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card query-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                    <h5>Keyword Analysis</h5>
+                    <p class="text-muted">Analyze tweets by keywords</p>
+                    <a href="{% url 'analytics:create_query' %}?type=keyword" class="btn btn-outline-primary">Start</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card query-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                    <h5>Trend Analysis</h5>
+                    <p class="text-muted">Track sentiment trends</p>
+                    <a href="{% url 'analytics:create_query' %}?type=trend" class="btn btn-outline-success">Start</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card query-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-balance-scale fa-3x text-info mb-3"></i>
+                    <h5>Comparison Analysis</h5>
+                    <p class="text-muted">Compare different criteria</p>
+                    <a href="{% url 'analytics:create_query' %}?type=comparison" class="btn btn-outline-info">Start</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card query-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                    <h5>Demographic Analysis</h5>
+                    <p class="text-muted">Analyze by demographics</p>
+                    <a href="{% url 'analytics:create_query' %}?type=demographic" class="btn btn-outline-warning">Start</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Queries and Results -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Recent Queries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for query in recent_queries %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ query.title }}</h6>
+                                <small>{{ query.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">{{ query.description|truncatechars:100 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Type: {{ query.get_query_type_display }}</small>
+                                <div class="btn-group">
+                                    <a href="{% url 'analytics:execute_query' query.id %}" class="btn btn-sm btn-outline-primary">Run</a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteQuery({{ query.id }})">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <p class="text-muted">No recent queries</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Recent Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for result in recent_results %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ result.query.title }}</h6>
+                                <small>{{ result.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">
+                                Status: 
+                                <span class="badge {% if result.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ result.status|title }}
+                                </span>
+                                {% if result.status == 'completed' %}
+                                ({{ result.execution_time|floatformat:2 }}s)
+                                {% endif %}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Type: {{ result.query.get_query_type_display }}</small>
+                                <div class="btn-group">
+                                    <a href="{% url 'analytics:view_result' result.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    <a href="{% url 'analytics:export_result' result.id %}" class="btn btn-sm btn-outline-success">Export</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <p class="text-muted">No recent results</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduled Queries -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Scheduled Queries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Interval</th>
+                                    <th>Last Run</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for query in scheduled_queries %}
+                                <tr>
+                                    <td>{{ query.title }}</td>
+                                    <td>{{ query.get_query_type_display }}</td>
+                                    <td>{{ query.schedule_interval }}</td>
+                                    <td>{{ query.last_run|default:"Never"|timesince }} ago</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'analytics:execute_query' query.id %}" class="btn btn-sm btn-outline-primary">Run Now</a>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="editSchedule({{ query.id }})">Edit Schedule</button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteQuery({{ query.id }})">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No scheduled queries</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteQuery(queryId) {
+    if (confirm('Are you sure you want to delete this query?')) {
+        fetch(`/analytics/queries/${queryId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting query');
+            }
+        });
+    }
+}
+
+function editSchedule(queryId) {
+    const interval = prompt('Enter schedule interval (e.g., "daily", "weekly", "monthly"):');
+    if (interval) {
+        fetch(`/analytics/queries/${queryId}/schedule/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ interval })
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error updating schedule');
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

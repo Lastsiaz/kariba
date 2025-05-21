@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Data Sources{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+    }
+    .stat-card .card-title {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .stat-card .card-text {
+        color: white;
+    }
+    .source-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .source-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .source-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .source-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-completed {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    .status-draft {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Data Sources</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
+            <i class="fas fa-plus"></i> Add New Source
+        </button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Sources</h5>
+                    <h2 class="card-text">{{ total_sources }}</h2>
+                    <p class="text-white-50 mb-0">Connected data sources</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Sources</h5>
+                    <h2 class="card-text">{{ active_sources }}</h2>
+                    <p class="text-white-50 mb-0">Currently active</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Completed</h5>
+                    <h2 class="card-text">{{ completed_sources }}</h2>
+                    <p class="text-white-50 mb-0">Finished collecting data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Sources List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Connected Data Sources</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Source Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for source in data_sources %}
+                        <tr>
+                            <td>{{ source.name }}</td>
+                            <td>{{ source.get_campaign_type_display }}</td>
+                            <td>
+                                <span class="source-status status-{{ source.status }}">
+                                    {{ source.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ source.created_at|date:"M d, Y" }}</td>
+                            <td>{{ source.updated_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="#" class="btn btn-sm btn-outline-success">Edit</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No data sources available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Source Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Data Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'campaign' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="sourceName" class="form-label">Source Name</label>
+                        <input type="text" class="form-control" id="sourceName" name="campaignName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="sourceDescription" name="campaignDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceType" class="form-label">Source Type</label>
+                        <select class="form-select" id="sourceType" name="campaignType" required>
+                            <option value="survey">Survey</option>
+                            <option value="api">API Integration</option>
+                            <option value="database">Database</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate">
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Source</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize any data source specific JavaScript here
+});
+</script>
+{% endblock %} 

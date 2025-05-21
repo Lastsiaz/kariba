@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sentiment Trends - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Sentiment Trends Over Time</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-light btn-sm" id="hourlyView">Hourly</button>
+                        <button class="btn btn-light btn-sm" id="dailyView">Daily</button>
+                        <button class="btn btn-light btn-sm" id="weeklyView">Weekly</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Volume Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Sentiment Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Trend Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time Period</th>
+                                    <th>Total Tweets</th>
+                                    <th>Positive %</th>
+                                    <th>Negative %</th>
+                                    <th>Neutral %</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trendTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Load data
+const hourlyData = {{ hourly_counts|safe }};
+
+// Initialize charts
+const trendChart = new Chart(document.getElementById('trendChart').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Positive',
+            borderColor: '#28a745',
+            data: []
+        }, {
+            label: 'Negative',
+            borderColor: '#dc3545',
+            data: []
+        }, {
+            label: 'Neutral',
+            borderColor: '#ffc107',
+            data: []
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+const volumeChart = new Chart(document.getElementById('volumeChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Tweet Volume',
+            backgroundColor: '#0d6efd',
+            data: []
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+const distributionChart = new Chart(document.getElementById('distributionChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Positive', 'Negative', 'Neutral'],
+        datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Process and display data
+function processData(data, groupBy = 'hour') {
+    const processed = {
+        labels: [],
+        positive: [],
+        negative: [],
+        neutral: [],
+        volume: []
+    };
+
+    // Group data by time period
+    const grouped = data.reduce((acc, item) => {
+        const time = new Date(item.hour);
+        const key = groupBy === 'hour' ? time.getHours()
+            : groupBy === 'day' ? time.getDate()
+            : Math.floor(time.getDate() / 7);
+        
+        if (!acc[key]) {
+            acc[key] = {
+                positive: 0,
+                negative: 0,
+                neutral: 0
+            };
+        }
+        acc[key][item.sentiment] += item.count;
+        return acc;
+    }, {});
+
+    // Convert grouped data to arrays
+    Object.keys(grouped).sort((a, b) => a - b).forEach(key => {
+        processed.labels.push(key);
+        processed.positive.push(grouped[key].positive);
+        processed.negative.push(grouped[key].negative);
+        processed.neutral.push(grouped[key].neutral);
+        processed.volume.push(
+            grouped[key].positive +
+            grouped[key].negative +
+            grouped[key].neutral
+        );
+    });
+
+    return processed;
+}
+
+function updateCharts(data) {
+    // Update trend chart
+    trendChart.data.labels = data.labels;
+    trendChart.data.datasets[0].data = data.positive;
+    trendChart.data.datasets[1].data = data.negative;
+    trendChart.data.datasets[2].data = data.neutral;
+    trendChart.update();
+
+    // Update volume chart
+    volumeChart.data.labels = data.labels;
+    volumeChart.data.datasets[0].data = data.volume;
+    volumeChart.update();
+
+    // Update distribution chart
+    const totalPositive = data.positive.reduce((a, b) => a + b, 0);
+    const totalNegative = data.negative.reduce((a, b) => a + b, 0);
+    const totalNeutral = data.neutral.reduce((a, b) => a + b, 0);
+    
+    distributionChart.data.datasets[0].data = [
+        totalPositive,
+        totalNegative,
+        totalNeutral
+    ];
+    distributionChart.update();
+
+    // Update trend table
+    updateTrendTable(data);
+}
+
+function updateTrendTable(data) {
+    const table = document.getElementById('trendTable');
+    table.innerHTML = '';
+
+    const total = data.volume.reduce((a, b) => a + b, 0);
+    const totalPositive = data.positive.reduce((a, b) => a + b, 0);
+    const totalNegative = data.negative.reduce((a, b) => a + b, 0);
+    const totalNeutral = data.neutral.reduce((a, b) => a + b, 0);
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>Overall</td>
+        <td>${total}</td>
+        <td>${((totalPositive / total) * 100).toFixed(1)}%</td>
+        <td>${((totalNegative / total) * 100).toFixed(1)}%</td>
+        <td>${((totalNeutral / total) * 100).toFixed(1)}%</td>
+        <td>
+            <span class="badge ${totalPositive > totalNegative ? 'bg-success' : 'bg-danger'}">
+                ${totalPositive > totalNegative ? 'Positive' : 'Negative'} Trend
+            </span>
+        </td>
+    `;
+    table.appendChild(row);
+}
+
+// Event listeners
+document.getElementById('hourlyView').addEventListener('click', () => {
+    const data = processData(hourlyData, 'hour');
+    updateCharts(data);
+});
+
+document.getElementById('dailyView').addEventListener('click', () => {
+    const data = processData(hourlyData, 'day');
+    updateCharts(data);
+});
+
+document.getElementById('weeklyView').addEventListener('click', () => {
+    const data = processData(hourlyData, 'week');
+    updateCharts(data);
+});
+
+// Initial load
+const initialData = processData(hourlyData, 'hour');
+updateCharts(initialData);
+</script>
+{% endblock %} 

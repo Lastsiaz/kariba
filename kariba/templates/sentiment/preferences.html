@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Preferences - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preferences-container {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .preferences-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .preferences-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .preferences-title {
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+    .preferences-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+    .theme-preview {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .theme-preview:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 0 10px rgba(13, 110, 253, 0.1);
+    }
+    .theme-preview.active {
+        border-color: #0d6efd;
+        background-color: #f8f9ff;
+    }
+    .theme-name {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .theme-colors {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .color-swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="preferences-container">
+        <h2 class="mb-4">User Preferences</h2>
+
+        <form method="post" id="preferencesForm">
+            {% csrf_token %}
+
+            <div class="preferences-section">
+                <h4 class="preferences-title">Display Settings</h4>
+                <p class="preferences-description">
+                    Customize how sentiment analysis results and visualizations are displayed.
+                </p>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Default View</label>
+                        <select class="form-select" name="default_view">
+                            <option value="summary" {% if preferences.default_view == 'summary' %}selected{% endif %}>Summary View</option>
+                            <option value="detailed" {% if preferences.default_view == 'detailed' %}selected{% endif %}>Detailed View</option>
+                            <option value="compact" {% if preferences.default_view == 'compact' %}selected{% endif %}>Compact View</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Chart Style</label>
+                        <select class="form-select" name="chart_style">
+                            <option value="modern" {% if preferences.chart_style == 'modern' %}selected{% endif %}>Modern</option>
+                            <option value="classic" {% if preferences.chart_style == 'classic' %}selected{% endif %}>Classic</option>
+                            <option value="minimal" {% if preferences.chart_style == 'minimal' %}selected{% endif %}>Minimal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="theme-preview {% if preferences.theme == 'light' %}active{% endif %}" data-theme="light">
+                            <div class="theme-name">Light Theme</div>
+                            <div class="theme-colors">
+                                <div class="color-swatch" style="background-color: #ffffff"></div>
+                                <div class="color-swatch" style="background-color: #f8f9fa"></div>
+                                <div class="color-swatch" style="background-color: #0d6efd"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="theme-preview {% if preferences.theme == 'dark' %}active{% endif %}" data-theme="dark">
+                            <div class="theme-name">Dark Theme</div>
+                            <div class="theme-colors">
+                                <div class="color-swatch" style="background-color: #212529"></div>
+                                <div class="color-swatch" style="background-color: #343a40"></div>
+                                <div class="color-swatch" style="background-color: #0dcaf0"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="theme-preview {% if preferences.theme == 'custom' %}active{% endif %}" data-theme="custom">
+                            <div class="theme-name">Custom Theme</div>
+                            <div class="theme-colors">
+                                <input type="color" class="form-control form-control-color" name="custom_primary_color"
+                                    value="{{ preferences.custom_primary_color|default:'#0d6efd' }}" title="Choose primary color">
+                                <input type="color" class="form-control form-control-color" name="custom_secondary_color"
+                                    value="{{ preferences.custom_secondary_color|default:'#6c757d' }}" title="Choose secondary color">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section">
+                <h4 class="preferences-title">Notification Preferences</h4>
+                <p class="preferences-description">
+                    Configure how you want to receive notifications about sentiment analysis results and system updates.
+                </p>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="email_notifications" id="emailNotifications"
+                                {% if preferences.email_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="emailNotifications">Email Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="browser_notifications" id="browserNotifications"
+                                {% if preferences.browser_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="browserNotifications">Browser Notifications</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="alert_notifications" id="alertNotifications"
+                                {% if preferences.alert_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="alertNotifications">Alert Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="report_notifications" id="reportNotifications"
+                                {% if preferences.report_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="reportNotifications">Report Notifications</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Notification Frequency</label>
+                        <select class="form-select" name="notification_frequency">
+                            <option value="realtime" {% if preferences.notification_frequency == 'realtime' %}selected{% endif %}>Real-time</option>
+                            <option value="hourly" {% if preferences.notification_frequency == 'hourly' %}selected{% endif %}>Hourly Digest</option>
+                            <option value="daily" {% if preferences.notification_frequency == 'daily' %}selected{% endif %}>Daily Digest</option>
+                            <option value="weekly" {% if preferences.notification_frequency == 'weekly' %}selected{% endif %}>Weekly Digest</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Quiet Hours</label>
+                        <div class="row">
+                            <div class="col">
+                                <input type="time" class="form-control" name="quiet_hours_start"
+                                    value="{{ preferences.quiet_hours_start|default:'22:00' }}">
+                            </div>
+                            <div class="col-auto">to</div>
+                            <div class="col">
+                                <input type="time" class="form-control" name="quiet_hours_end"
+                                    value="{{ preferences.quiet_hours_end|default:'07:00' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section">
+                <h4 class="preferences-title">Export Preferences</h4>
+                <p class="preferences-description">
+                    Configure default settings for exporting sentiment analysis results.
+                </p>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Default Export Format</label>
+                        <select class="form-select" name="default_export_format">
+                            <option value="csv" {% if preferences.default_export_format == 'csv' %}selected{% endif %}>CSV</option>
+                            <option value="excel" {% if preferences.default_export_format == 'excel' %}selected{% endif %}>Excel</option>
+                            <option value="json" {% if preferences.default_export_format == 'json' %}selected{% endif %}>JSON</option>
+                            <option value="pdf" {% if preferences.default_export_format == 'pdf' %}selected{% endif %}>PDF</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Include in Exports</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="export_metadata" id="exportMetadata"
+                                {% if preferences.export_metadata %}checked{% endif %}>
+                            <label class="form-check-label" for="exportMetadata">Include Metadata</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="export_charts" id="exportCharts"
+                                {% if preferences.export_charts %}checked{% endif %}>
+                            <label class="form-check-label" for="exportCharts">Include Charts</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="export_raw_data" id="exportRawData"
+                                {% if preferences.export_raw_data %}checked{% endif %}>
+                            <label class="form-check-label" for="exportRawData">Include Raw Data</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetPreferences()">
+                    Reset to Defaults
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Save Preferences
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.theme-preview').forEach(preview => {
+    preview.addEventListener('click', function() {
+        // Update active state
+        document.querySelectorAll('.theme-preview').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update hidden input
+        const themeInput = document.createElement('input');
+        themeInput.type = 'hidden';
+        themeInput.name = 'theme';
+        themeInput.value = this.dataset.theme;
+        
+        const existingThemeInput = document.querySelector('input[name="theme"]');
+        if (existingThemeInput) {
+            existingThemeInput.remove();
+        }
+        
+        document.getElementById('preferencesForm').appendChild(themeInput);
+    });
+});
+
+function resetPreferences() {
+    if (confirm('Are you sure you want to reset all preferences to their default values?')) {
+        window.location.href = '{% url "sentiment:reset_preferences" %}';
+    }
+}
+
+document.getElementById('preferencesForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const response = await fetch('{% url "sentiment:save_preferences" %}', {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showSuccess('Preferences saved successfully');
+        } else {
+            throw new Error(data.error || 'Failed to save preferences');
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+});
+
+// Request browser notification permission if enabled
+document.getElementById('browserNotifications').addEventListener('change', function() {
+    if (this.checked) {
+        Notification.requestPermission().then(function(permission) {
+            if (permission !== 'granted') {
+                document.getElementById('browserNotifications').checked = false;
+                showError('Browser notifications permission denied');
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

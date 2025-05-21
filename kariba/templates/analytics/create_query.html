@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Analysis Query - Real-time Sentiment Analysis System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Create Analysis Query</h5>
+                </div>
+                <div class="card-body">
+                    <form id="queryForm" onsubmit="return submitQuery(event)">
+                        <!-- Basic Information -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Query Title</label>
+                            <input type="text" class="form-control" id="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="queryType" class="form-label">Analysis Type</label>
+                            <select class="form-select" id="queryType" onchange="updateParametersForm()" required>
+                                <option value="">Select analysis type...</option>
+                                <option value="keyword">Keyword Analysis</option>
+                                <option value="trend">Trend Analysis</option>
+                                <option value="comparison">Comparison Analysis</option>
+                                <option value="demographic">Demographic Analysis</option>
+                                <option value="custom">Custom Analysis</option>
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Parameters Form -->
+                        <div id="parametersForm" class="mb-3">
+                            <!-- Populated by JavaScript -->
+                        </div>
+
+                        <!-- Schedule Options -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isScheduled" onchange="toggleScheduleOptions()">
+                                <label class="form-check-label" for="isScheduled">
+                                    Schedule this query
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="scheduleOptions" class="mb-3" style="display: none;">
+                            <label for="scheduleInterval" class="form-label">Schedule Interval</label>
+                            <select class="form-select" id="scheduleInterval">
+                                <option value="hourly">Hourly</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Query</button>
+                            <a href="{% url 'analytics:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateParametersForm() {
+    const queryType = document.getElementById('queryType').value;
+    const parametersForm = document.getElementById('parametersForm');
+    
+    // Clear existing form
+    parametersForm.innerHTML = '';
+    
+    if (!queryType) return;
+    
+    // Add date range for all query types
+    parametersForm.innerHTML += `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="datetime-local" class="form-control" id="startDate" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">End Date</label>
+                    <input type="datetime-local" class="form-control" id="endDate" required>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add type-specific parameters
+    switch (queryType) {
+        case 'keyword':
+            parametersForm.innerHTML += `
+                <div class="mb-3">
+                    <label class="form-label">Keywords</label>
+                    <div id="keywordsList">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" placeholder="Enter keyword">
+                            <button type="button" class="btn btn-outline-secondary" onclick="addKeywordField()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'trend':
+            parametersForm.innerHTML += `
+                <div class="mb-3">
+                    <label class="form-label">Time Interval</label>
+                    <select class="form-select" id="interval" required>
+                        <option value="hour">Hourly</option>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="month">Monthly</option>
+                    </select>
+                </div>
+            `;
+            break;
+            
+        case 'comparison':
+            parametersForm.innerHTML += `
+                <div class="mb-3">
+                    <label class="form-label">Comparison Criteria</label>
+                    <div id="criteriaList">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" placeholder="Enter criterion">
+                            <button type="button" class="btn btn-outline-secondary" onclick="addCriterionField()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'demographic':
+            parametersForm.innerHTML += `
+                <div class="mb-3">
+                    <label class="form-label">Demographic Field</label>
+                    <select class="form-select" id="demographicField" required>
+                        <option value="location">Location</option>
+                        <option value="language">Language</option>
+                        <option value="time_zone">Time Zone</option>
+                    </select>
+                </div>
+            `;
+            break;
+            
+        case 'custom':
+            parametersForm.innerHTML += `
+                <div class="mb-3">
+                    <label class="form-label">MongoDB Query</label>
+                    <textarea class="form-control" id="customQuery" rows="4" placeholder="{&quot;field&quot;: &quot;value&quot;}" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Aggregation Pipeline</label>
+                    <textarea class="form-control" id="aggregation" rows="4" placeholder="[{&quot;$match&quot;: {}}, {&quot;$group&quot;: {}}]" required></textarea>
+                </div>
+            `;
+            break;
+    }
+}
+
+function addKeywordField() {
+    const keywordsList = document.getElementById('keywordsList');
+    const newField = document.createElement('div');
+    newField.className = 'input-group mb-2';
+    newField.innerHTML = `
+        <input type="text" class="form-control" placeholder="Enter keyword">
+        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">
+            <i class="fas fa-minus"></i>
+        </button>
+    `;
+    keywordsList.appendChild(newField);
+}
+
+function addCriterionField() {
+    const criteriaList = document.getElementById('criteriaList');
+    const newField = document.createElement('div');
+    newField.className = 'input-group mb-2';
+    newField.innerHTML = `
+        <input type="text" class="form-control" placeholder="Enter criterion">
+        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">
+            <i class="fas fa-minus"></i>
+        </button>
+    `;
+    criteriaList.appendChild(newField);
+}
+
+function toggleScheduleOptions() {
+    const scheduleOptions = document.getElementById('scheduleOptions');
+    scheduleOptions.style.display = document.getElementById('isScheduled').checked ? 'block' : 'none';
+}
+
+function getParameters() {
+    const queryType = document.getElementById('queryType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    const baseParams = {
+        start_date: startDate,
+        end_date: endDate
+    };
+    
+    switch (queryType) {
+        case 'keyword':
+            const keywords = Array.from(document.querySelectorAll('#keywordsList input'))
+                .map(input => input.value.trim())
+                .filter(value => value);
+            return { ...baseParams, keywords };
+            
+        case 'trend':
+            return {
+                ...baseParams,
+                interval: document.getElementById('interval').value
+            };
+            
+        case 'comparison':
+            const criteria = Array.from(document.querySelectorAll('#criteriaList input'))
+                .map(input => input.value.trim())
+                .filter(value => value);
+            return { ...baseParams, criteria };
+            
+        case 'demographic':
+            return {
+                ...baseParams,
+                demographic_field: document.getElementById('demographicField').value
+            };
+            
+        case 'custom':
+            return {
+                ...baseParams,
+                query: JSON.parse(document.getElementById('customQuery').value),
+                aggregation: JSON.parse(document.getElementById('aggregation').value)
+            };
+            
+        default:
+            return baseParams;
+    }
+}
+
+async function submitQuery(event) {
+    event.preventDefault();
+    
+    try {
+        const response = await fetch("{% url 'analytics:create_query' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                query_type: document.getElementById('queryType').value,
+                parameters: getParameters(),
+                is_scheduled: document.getElementById('isScheduled').checked,
+                schedule_interval: document.getElementById('isScheduled').checked ?
+                    document.getElementById('scheduleInterval').value : null
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            window.location.href = `/analytics/queries/${result.id}/execute/`;
+        } else {
+            throw new Error('Failed to create query');
+        }
+    } catch (error) {
+        alert('Error creating query: ' + error.message);
+    }
+    
+    return false;
+}
+
+// Set default dates (last 7 days)
+document.addEventListener('DOMContentLoaded', function() {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    
+    document.getElementById('startDate').value = start.toISOString().slice(0, 16);
+    document.getElementById('endDate').value = end.toISOString().slice(0, 16);
+});
+</script>
+{% endblock %} 

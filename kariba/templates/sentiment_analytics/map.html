@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sentiment Map - Real-time Sentiment Analysis System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+<style>
+    #sentimentMap {
+        height: 600px;
+        width: 100%;
+        border-radius: 4px;
+    }
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Geographical Sentiment Distribution</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-light btn-sm" id="toggleHeatmap">Toggle Heatmap</button>
+                        <button class="btn btn-light btn-sm" id="toggleMarkers">Toggle Markers</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="sentimentMap"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div id="mapStats">
+                        <p><strong>Total Locations:</strong> <span id="totalLocations">0</span></p>
+                        <p><strong>Positive Locations:</strong> <span id="positiveLocations">0</span></p>
+                        <p><strong>Negative Locations:</strong> <span id="negativeLocations">0</span></p>
+                        <p><strong>Neutral Locations:</strong> <span id="neutralLocations">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Location Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Sentiment</label>
+                            <select class="form-select" id="sentimentFilter">
+                                <option value="all">All</option>
+                                <option value="positive">Positive</option>
+                                <option value="negative">Negative</option>
+                                <option value="neutral">Neutral</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Time Range</label>
+                            <select class="form-select" id="timeFilter">
+                                <option value="24h">Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                                <option value="30d">Last 30 Days</option>
+                                <option value="all">All Time</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Region</label>
+                            <select class="form-select" id="regionFilter">
+                                <option value="all">All Regions</option>
+                                <option value="africa">Africa</option>
+                                <option value="asia">Asia</option>
+                                <option value="europe">Europe</option>
+                                <option value="namerica">North America</option>
+                                <option value="samerica">South America</option>
+                                <option value="oceania">Oceania</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script>
+// Initialize map
+const map = L.map('sentimentMap').setView([0, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Initialize layers
+const markers = L.layerGroup().addTo(map);
+let heatLayer = null;
+
+// Sentiment colors
+const colors = {
+    positive: '#28a745',
+    negative: '#dc3545',
+    neutral: '#ffc107'
+};
+
+// Add legend
+const legend = L.control({position: 'bottomright'});
+legend.onAdd = function(map) {
+    const div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = `
+        <h6>Sentiment</h6>
+        <p><i style="background: ${colors.positive}"></i> Positive</p>
+        <p><i style="background: ${colors.negative}"></i> Negative</p>
+        <p><i style="background: ${colors.neutral}"></i> Neutral</p>
+    `;
+    return div;
+};
+legend.addTo(map);
+
+// Load and process data
+const analyses = {{ analyses|safe }};
+let points = [];
+let stats = {
+    total: 0,
+    positive: 0,
+    negative: 0,
+    neutral: 0
+};
+
+function processData(data) {
+    markers.clearLayers();
+    points = [];
+    stats = {total: 0, positive: 0, negative: 0, neutral: 0};
+
+    data.forEach(analysis => {
+        if (analysis.location) {
+            // Convert location to coordinates (simplified)
+            const coords = getCoordinates(analysis.location);
+            if (coords) {
+                // Add marker
+                const marker = L.circleMarker([coords.lat, coords.lng], {
+                    radius: 8,
+                    fillColor: colors[analysis.sentiment],
+                    color: '#fff',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(`
+                    <strong>Location:</strong> ${analysis.location}<br>
+                    <strong>Sentiment:</strong> ${analysis.sentiment}
+                `);
+                markers.addLayer(marker);
+
+                // Add point for heatmap
+                points.push([coords.lat, coords.lng, 1]);
+
+                // Update stats
+                stats.total++;
+                stats[analysis.sentiment]++;
+            }
+        }
+    });
+
+    // Update statistics display
+    updateStats();
+
+    // Update heatmap
+    if (heatLayer) {
+        map.removeLayer(heatLayer);
+    }
+    heatLayer = L.heatLayer(points, {radius: 25}).addTo(map);
+}
+
+function updateStats() {
+    document.getElementById('totalLocations').textContent = stats.total;
+    document.getElementById('positiveLocations').textContent = stats.positive;
+    document.getElementById('negativeLocations').textContent = stats.negative;
+    document.getElementById('neutralLocations').textContent = stats.neutral;
+}
+
+// Simplified geocoding function (replace with actual geocoding service)
+function getCoordinates(location) {
+    // This is a placeholder. In production, use a geocoding service
+    // For demo, return random coordinates near the given location
+    return {
+        lat: -15 + Math.random() * 30,
+        lng: 25 + Math.random() * 30
+    };
+}
+
+// Event listeners
+document.getElementById('toggleHeatmap').addEventListener('click', function() {
+    if (map.hasLayer(heatLayer)) {
+        map.removeLayer(heatLayer);
+    } else {
+        heatLayer.addTo(map);
+    }
+});
+
+document.getElementById('toggleMarkers').addEventListener('click', function() {
+    if (map.hasLayer(markers)) {
+        map.removeLayer(markers);
+    } else {
+        markers.addTo(map);
+    }
+});
+
+// Filter form event listeners
+const filterForm = document.getElementById('filterForm');
+filterForm.querySelectorAll('select').forEach(select => {
+    select.addEventListener('change', function() {
+        const filters = {
+            sentiment: document.getElementById('sentimentFilter').value,
+            time: document.getElementById('timeFilter').value,
+            region: document.getElementById('regionFilter').value
+        };
+        
+        // Apply filters (simplified)
+        const filteredData = analyses.filter(analysis => {
+            if (filters.sentiment !== 'all' && analysis.sentiment !== filters.sentiment) {
+                return false;
+            }
+            // Add more filter logic here
+            return true;
+        });
+        
+        processData(filteredData);
+    });
+});
+
+// Initial data processing
+processData(analyses);
+</script>
+{% endblock %} 

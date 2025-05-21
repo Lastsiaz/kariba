@@ -44,6 +44,9 @@ def report_access_required(view_func):
 def admin_required(function):
     @wraps(function)
     def wrap(request, *args, **kwargs):
+        if not request.user.is_authenticated or not hasattr(request.user, 'userprofile'):
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('login')
         if request.user.userprofile.is_admin:
             return function(request, *args, **kwargs)
         raise PermissionDenied
@@ -52,6 +55,9 @@ def admin_required(function):
 def analyst_required(function):
     @wraps(function)
     def wrap(request, *args, **kwargs):
+        if not request.user.is_authenticated or not hasattr(request.user, 'userprofile'):
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('login')
         if request.user.userprofile.is_analyst:
             return function(request, *args, **kwargs)
         raise PermissionDenied
@@ -60,17 +66,10 @@ def analyst_required(function):
 def marketer_required(function):
     @wraps(function)
     def wrap(request, *args, **kwargs):
+        if not request.user.is_authenticated or not hasattr(request.user, 'userprofile'):
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('login')
         if request.user.userprofile.is_marketer:
             return function(request, *args, **kwargs)
         raise PermissionDenied
-    return wrap
-
-def role_required(roles):
-    def decorator(function):
-        @wraps(function)
-        def wrap(request, *args, **kwargs):
-            if request.user.userprofile.role in roles:
-                return function(request, *args, **kwargs)
-            raise PermissionDenied
-        return wrap
-    return decorator 
+    return wrap 

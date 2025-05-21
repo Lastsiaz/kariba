@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background circle -->
+    <circle cx="100" cy="100" r="100" fill="#e9ecef"/>
+    
+    <!-- Head -->
+    <circle cx="100" cy="85" r="35" fill="#6c757d"/>
+    
+    <!-- Body -->
+    <path d="M100 130 C 60 130 40 160 40 200 L 160 200 C 160 160 140 130 100 130" fill="#6c757d"/>
+</svg> 
