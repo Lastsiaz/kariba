@@ -44,6 +44,9 @@
                                     <a href="{% url 'edit_user' profile.user.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <a href="#" class="btn btn-sm btn-outline-info" title="X (Twitter) Streaming" data-bs-toggle="modal" data-bs-target="#xStreamingModal">
+                                        <i class="fab fa-x-twitter" style="color: #1DA1F2;"></i>
+                                    </a>
                                     {% if profile.user != request.user %}
                                     <button type="button" class="btn btn-sm btn-outline-danger" 
                                             data-user-id="{{ profile.user.id }}"

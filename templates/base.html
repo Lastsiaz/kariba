@@ -137,6 +137,77 @@
             font-size: 0.75rem;
             color: #6c757d;
         }
+        
+        /* X Streaming Styles */
+        .nav-link .fab.fa-x-twitter {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover .fab.fa-x-twitter {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+        
+        .tweet-item {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tweet-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .streaming-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .streaming-settings {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .streaming-stats {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .streaming-controls .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .streaming-controls .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #streamingIndicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -187,6 +258,17 @@
                                 </div>
                             </li>
                         {% endif %}
+                        
+                        <!-- X (Twitter) Live Streaming Icon for Admin, Analyst, Marketer, and Researcher -->
+                        {% if user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="xStreamingBtn" title="Live X (Twitter) Streaming" data-bs-toggle="modal" data-bs-target="#xStreamingModal">
+                                    <i class="fab fa-x-twitter" style="color: #1DA1F2; font-size: 1.2em;"></i>
+                                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.6em; display: none;" id="streamingIndicator">LIVE</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
                         <li class="nav-item">
                             <form method="post" action="{% url 'logout' %}" class="d-inline">
                                 {% csrf_token %}
@@ -235,6 +317,146 @@
             </div>
         </div>
     </footer>
+
+    <!-- X (Twitter) Live Streaming Modal -->
+    <div class="modal fade" id="xStreamingModal" tabindex="-1" aria-labelledby="xStreamingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="xStreamingModalLabel">
+                        <i class="fab fa-x-twitter me-2" style="color: #1DA1F2;"></i>
+                        Live X (Twitter) Stream
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="streaming-container">
+                                <div class="streaming-header mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Live Tweet Stream</h6>
+                                        <div class="streaming-controls">
+                                            <button class="btn btn-sm btn-success me-2" id="startStreaming">
+                                                <i class="fas fa-play me-1"></i>Start Stream
+                                            </button>
+                                            <button class="btn btn-sm btn-danger me-2" id="stopStreaming" style="display: none;">
+                                                <i class="fas fa-stop me-1"></i>Stop Stream
+                                            </button>
+                                            <span class="badge bg-danger" id="streamingStatus" style="display: none;">LIVE</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tweet-stream" id="tweetStream" style="height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
+                                    <div class="text-center text-muted">
+                                        <i class="fab fa-x-twitter fa-3x mb-3" style="color: #1DA1F2;"></i>
+                                        <p>Click "Start Stream" to begin live tweet monitoring</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="streaming-settings">
+                                <h6 class="mb-3">Stream Settings</h6>
+                                <div class="mb-3">
+                                    <label for="searchKeywords" class="form-label">Search Keywords</label>
+                                    <input type="text" class="form-control" id="searchKeywords" placeholder="e.g., #Zimbabwe, #Kariba, sentiment">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="streamingSpeed" class="form-label">Stream Speed</label>
+                                    <select class="form-select" id="streamingSpeed">
+                                        <option value="slow">Slow (1 tweet/5s)</option>
+                                        <option value="normal" selected>Normal (1 tweet/2s)</option>
+                                        <option value="fast">Fast (1 tweet/1s)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="maxTweets" class="form-label">Max Tweets to Display</label>
+                                    <select class="form-select" id="maxTweets">
+                                        <option value="10">10 tweets</option>
+                                        <option value="25" selected>25 tweets</option>
+                                        <option value="50">50 tweets</option>
+                                        <option value="100">100 tweets</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="autoScroll" checked>
+                                        <label class="form-check-label" for="autoScroll">
+                                            Auto-scroll to new tweets
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="streaming-stats mt-4">
+                                <h6 class="mb-3">Stream Statistics</h6>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <h4 class="text-primary" id="totalTweets">0</h4>
+                                            <small class="text-muted">Total Tweets</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <h4 class="text-success" id="positiveTweets">0</h4>
+                                            <small class="text-muted">Positive</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row text-center mt-2">
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <h4 class="text-warning" id="neutralTweets">0</h4>
+                                            <small class="text-muted">Neutral</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-item">
+                                            <h4 class="text-danger" id="negativeTweets">0</h4>
+                                            <small class="text-muted">Negative</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="export-help mt-4">
+                                <h6 class="mb-3">Export Options</h6>
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>Training Data:</strong> CSV format with text and sentiment columns for ML model training<br>
+                                        <strong>Word Analysis:</strong> Word frequency analysis by sentiment with examples<br>
+                                        <strong>Full Data:</strong> Complete tweet data with user, timestamp, and metadata<br>
+                                        <strong>Save to Server:</strong> Save training data directly to models directory for ML training
+                                    </small>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-warning btn-sm" id="saveTrainingData">
+                                        <i class="fas fa-save me-1"></i>Save Training Data to Server
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-success" id="exportTrainingData">
+                            <i class="fas fa-file-csv me-1"></i>Export Training Data
+                        </button>
+                        <button type="button" class="btn btn-info" id="exportWordData">
+                            <i class="fas fa-chart-bar me-1"></i>Export Word Analysis
+                        </button>
+                        <button type="button" class="btn btn-primary" id="exportStreamData">
+                            <i class="fas fa-download me-1"></i>Export Full Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -310,6 +532,386 @@
             
             // Check for new reports immediately
             checkForNewReports();
+            
+            // Global variables for streaming
+            let isStreaming = false;
+            let streamingInterval = null;
+            let tweets = [];
+            let tweetCount = 0;
+            let positiveCount = 0;
+            let neutralCount = 0;
+            let negativeCount = 0;
+            
+            // Sample tweets for demonstration
+            const sampleTweets = [
+                { user: '@tech_enthusiast', text: 'Just tried the new AI feature and it\'s absolutely amazing! The accuracy is incredible.', sentiment: 'positive' },
+                { user: '@product_reviewer', text: 'Disappointed with the latest update. The interface is confusing and slow.', sentiment: 'negative' },
+                { user: '@daily_user', text: 'The app works fine, nothing special but gets the job done.', sentiment: 'neutral' },
+                { user: '@influencer_tech', text: 'This new feature is a game-changer! Can\'t believe how much time it saves.', sentiment: 'positive' },
+                { user: '@frustrated_user', text: 'Terrible customer service. Been waiting for a response for days.', sentiment: 'negative' },
+                { user: '@casual_user', text: 'Updated the app today. Seems to be working as expected.', sentiment: 'neutral' },
+                { user: '@early_adopter', text: 'Love the new design! Much more intuitive and user-friendly.', sentiment: 'positive' },
+                { user: '@power_user', text: 'The performance is awful after the latest update. Everything is lagging.', sentiment: 'negative' },
+                { user: '@regular_user', text: 'The app is okay, I use it occasionally for basic tasks.', sentiment: 'neutral' },
+                { user: '@tech_reviewer', text: 'Outstanding performance and reliability. Highly recommend!', sentiment: 'positive' }
+            ];
+            
+            // Function to create a tweet element
+            function createTweetElement(tweet) {
+                const sentimentClass = tweet.sentiment === 'positive' ? 'border-success' : 
+                                     tweet.sentiment === 'negative' ? 'border-danger' : 'border-warning';
+                const sentimentIcon = tweet.sentiment === 'positive' ? 'fa-smile' : 
+                                    tweet.sentiment === 'negative' ? 'fa-frown' : 'fa-meh';
+                const sentimentColor = tweet.sentiment === 'positive' ? 'text-success' : 
+                                     tweet.sentiment === 'negative' ? 'text-danger' : 'text-warning';
+                
+                return `
+                    <div class="tweet-item border-start ${sentimentClass} border-3 ps-3 mb-3 p-2 bg-white rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fab fa-x-twitter me-2" style="color: #1DA1F2;"></i>
+                                    <strong class="me-2">${tweet.user}</strong>
+                                    <small class="text-muted">${tweet.timestamp.toLocaleTimeString()}</small>
+                                </div>
+                                <p class="mb-1">${tweet.text}</p>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas ${sentimentIcon} ${sentimentColor} me-1"></i>
+                                    <small class="text-muted">${tweet.sentiment.charAt(0).toUpperCase() + tweet.sentiment.slice(1)} sentiment</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Function to add a tweet to the stream
+            function addTweetToStream(tweet) {
+                const tweetStream = document.getElementById('tweetStream');
+                if (!tweetStream) return;
+                
+                const tweetElement = createTweetElement(tweet);
+                
+                // Remove the initial message if it exists
+                const initialMessage = tweetStream.querySelector('.text-center.text-muted');
+                if (initialMessage) {
+                    initialMessage.remove();
+                }
+                
+                // Add the new tweet at the top
+                tweetStream.insertAdjacentHTML('afterbegin', tweetElement);
+                
+                // Auto-scroll if enabled
+                const autoScroll = document.getElementById('autoScroll');
+                if (autoScroll && autoScroll.checked) {
+                    tweetStream.scrollTop = 0;
+                }
+                
+                // Update statistics
+                tweetCount++;
+                if (tweet.sentiment === 'positive') positiveCount++;
+                else if (tweet.sentiment === 'negative') negativeCount++;
+                else neutralCount++;
+                
+                updateStatistics();
+                
+                // Limit the number of displayed tweets
+                const maxTweetsElement = document.getElementById('maxTweets');
+                if (maxTweetsElement) {
+                    const maxTweets = parseInt(maxTweetsElement.value);
+                    const tweetItems = tweetStream.querySelectorAll('.tweet-item');
+                    if (tweetItems.length > maxTweets) {
+                        tweetItems[tweetItems.length - 1].remove();
+                    }
+                }
+                
+                console.log('[DEBUG] Tweet added to array:', tweet);
+            }
+            
+            // Function to update statistics
+            function updateStatistics() {
+                const totalTweetsEl = document.getElementById('totalTweets');
+                const positiveTweetsEl = document.getElementById('positiveTweets');
+                const neutralTweetsEl = document.getElementById('neutralTweets');
+                const negativeTweetsEl = document.getElementById('negativeTweets');
+                
+                if (totalTweetsEl) totalTweetsEl.textContent = tweetCount;
+                if (positiveTweetsEl) positiveTweetsEl.textContent = positiveCount;
+                if (neutralTweetsEl) neutralTweetsEl.textContent = neutralCount;
+                if (negativeTweetsEl) negativeTweetsEl.textContent = negativeCount;
+            }
+            
+            // Function to start streaming
+            function startStreaming() {
+                console.log('Starting streaming...'); // Debug log
+                if (isStreaming) return;
+                
+                isStreaming = true;
+                const startBtn = document.getElementById('startStreaming');
+                const stopBtn = document.getElementById('stopStreaming');
+                const streamingStatus = document.getElementById('streamingStatus');
+                const streamingIndicator = document.getElementById('streamingIndicator');
+                
+                if (startBtn) startBtn.style.display = 'none';
+                if (stopBtn) stopBtn.style.display = 'inline-block';
+                if (streamingStatus) streamingStatus.style.display = 'inline-block';
+                if (streamingIndicator) streamingIndicator.style.display = 'inline-block';
+                
+                const speedElement = document.getElementById('streamingSpeed');
+                const speed = speedElement ? speedElement.value : 'normal';
+                const interval = speed === 'slow' ? 5000 : speed === 'fast' ? 1000 : 2000;
+                
+                streamingInterval = setInterval(() => {
+                    const randomTweet = sampleTweets[Math.floor(Math.random() * sampleTweets.length)];
+                    const newTweet = {
+                        ...randomTweet,
+                        timestamp: new Date(),
+                        text: randomTweet.text + (Math.random() > 0.7 ? ` #${Date.now()}` : '')
+                    };
+                    addTweetToStream(newTweet);
+                    tweets.push(newTweet);
+                    console.log(`Tweet added to array: "${newTweet.text.substring(0, 30)}..." (${newTweet.sentiment})`); // Debug log
+                }, interval);
+                
+                console.log('Streaming started successfully'); // Debug log
+            }
+            
+            // Function to stop streaming
+            function stopStreaming() {
+                console.log('Stopping streaming...'); // Debug log
+                if (!isStreaming) return;
+                
+                isStreaming = false;
+                const startBtn = document.getElementById('startStreaming');
+                const stopBtn = document.getElementById('stopStreaming');
+                const streamingStatus = document.getElementById('streamingStatus');
+                const streamingIndicator = document.getElementById('streamingIndicator');
+                
+                if (startBtn) startBtn.style.display = 'inline-block';
+                if (stopBtn) stopBtn.style.display = 'none';
+                if (streamingStatus) streamingStatus.style.display = 'none';
+                if (streamingIndicator) streamingIndicator.style.display = 'none';
+                
+                if (streamingInterval) {
+                    clearInterval(streamingInterval);
+                    streamingInterval = null;
+                }
+                
+                console.log('Streaming stopped successfully'); // Debug log
+            }
+            
+            // Function to extract words from tweets
+            function extractWordsFromTweets(tweets) {
+                const words = [];
+                tweets.forEach(tweet => {
+                    // Split text into words and clean them
+                    const tweetWords = tweet.text.toLowerCase()
+                        .replace(/[^\w\s]/g, '') // Remove punctuation
+                        .split(/\s+/)
+                        .filter(word => word.length > 2); // Filter out short words
+                    
+                    tweetWords.forEach(word => {
+                        words.push({
+                            word: word,
+                            sentiment: tweet.sentiment,
+                            tweet_text: tweet.text,
+                            user: tweet.user,
+                            timestamp: tweet.timestamp
+                        });
+                    });
+                });
+                return words;
+            }
+            
+            // Function to export stream data as training CSV
+            function exportTrainingData() {
+                if (tweets.length === 0) {
+                    alert('No data to export. Start streaming first.');
+                    return;
+                }
+                
+                // Format for training data: text,sentiment
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "text,sentiment\n"
+                    + tweets.map(tweet => 
+                        `"${tweet.text.replace(/"/g, '""')}","${tweet.sentiment}"`
+                    ).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `training_data_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // Function to export word-based data
+            function exportWordData() {
+                if (tweets.length === 0) {
+                    alert('No data to export. Start streaming first.');
+                    return;
+                }
+                
+                const words = extractWordsFromTweets(tweets);
+                
+                // Count word frequency by sentiment
+                const wordStats = {};
+                words.forEach(item => {
+                    const key = item.word;
+                    if (!wordStats[key]) {
+                        wordStats[key] = {
+                            word: key,
+                            positive: 0,
+                            negative: 0,
+                            neutral: 0,
+                            total: 0,
+                            examples: []
+                        };
+                    }
+                    wordStats[key][item.sentiment]++;
+                    wordStats[key].total++;
+                    if (wordStats[key].examples.length < 3) {
+                        wordStats[key].examples.push(item.tweet_text);
+                    }
+                });
+                
+                // Convert to CSV format
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "word,positive_count,negative_count,neutral_count,total_count,examples\n"
+                    + Object.values(wordStats).map(stat => 
+                        `"${stat.word}","${stat.positive}","${stat.negative}","${stat.neutral}","${stat.total}","${stat.examples.join(' | ').replace(/"/g, '""')}"`
+                    ).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `word_analysis_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // Function to export detailed stream data
+            function exportStreamData() {
+                if (tweets.length === 0) {
+                    alert('No data to export. Start streaming first.');
+                    return;
+                }
+                
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "User,Text,Sentiment,Timestamp\n"
+                    + tweets.map(tweet => 
+                        `"${tweet.user}","${tweet.text.replace(/"/g, '""')}","${tweet.sentiment}","${tweet.timestamp.toISOString()}"`
+                    ).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `tweet_stream_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // Function to get cookie value
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Function to save training data to server
+            function saveTrainingDataToServer() {
+                console.log('[DEBUG] Save Training Data button clicked');
+                if (tweets.length === 0) {
+                    alert('No data to save. Start streaming first.');
+                    return;
+                }
+                
+                console.log(`[DEBUG] Sending ${tweets.length} tweets to server`);
+                console.log('[DEBUG] Tweets data:', tweets);
+                
+                fetch('/sentiment-analytics/save-training-data/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({ tweets }),
+                })
+                .then(response => {
+                    console.log('[DEBUG] Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('[DEBUG] Server response:', data);
+                    if (data.success) {
+                        alert(`✅ Successfully saved ${data.count} tweets to training data!`);
+                    } else {
+                        alert(`❌ Error: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('[DEBUG] Error saving training data:', error);
+                    alert('❌ Failed to save training data. Please try again.');
+                });
+            }
+            
+            // Event delegation for streaming controls
+            document.addEventListener('click', function(e) {
+                // Start streaming button
+                if (e.target && e.target.id === 'startStreaming') {
+                    e.preventDefault();
+                    startStreaming();
+                }
+                
+                // Stop streaming button
+                if (e.target && e.target.id === 'stopStreaming') {
+                    e.preventDefault();
+                    stopStreaming();
+                }
+                
+                // Export training data button
+                if (e.target && e.target.id === 'exportTrainingData') {
+                    e.preventDefault();
+                    exportTrainingData();
+                }
+                
+                // Export word data button
+                if (e.target && e.target.id === 'exportWordData') {
+                    e.preventDefault();
+                    exportWordData();
+                }
+                
+                // Export stream data button
+                if (e.target && e.target.id === 'exportStreamData') {
+                    e.preventDefault();
+                    exportStreamData();
+                }
+                
+                // Save training data to server button
+                if (e.target && e.target.id === 'saveTrainingData') {
+                    e.preventDefault();
+                    saveTrainingDataToServer();
+                }
+            });
+            
+            // Reset streaming when modal is closed
+            document.addEventListener('hidden.bs.modal', function(e) {
+                if (e.target && e.target.id === 'xStreamingModal') {
+                    stopStreaming();
+                }
+            });
         });
     </script>
     <!-- Chart.js -->

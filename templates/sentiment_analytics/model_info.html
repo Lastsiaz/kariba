@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Model Information - Sentiment Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i> ML Model Information
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Model Status Overview -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Model Status Overview</h5>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <i class="fas fa-brain fa-2x text-primary"></i>
+                                                <p class="mt-2"><strong>ML Model</strong></p>
+                                                {% if model_status.ml_model_available %}
+                                                    <span class="badge badge-success">Available</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Not Available</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <i class="fas fa-language fa-2x text-info"></i>
+                                                <p class="mt-2"><strong>Vectorizer</strong></p>
+                                                {% if model_status.model_info.vectorizer_loaded %}
+                                                    <span class="badge badge-success">Loaded</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Not Loaded</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <i class="fas fa-tags fa-2x text-warning"></i>
+                                                <p class="mt-2"><strong>Label Encoder</strong></p>
+                                                {% if model_status.model_info.encoder_loaded %}
+                                                    <span class="badge badge-success">Loaded</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Not Loaded</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <i class="fas fa-cogs fa-2x text-secondary"></i>
+                                                <p class="mt-2"><strong>Current Method</strong></p>
+                                                <span class="badge badge-info">{{ model_status.current_method }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Model Information -->
+                    {% if model_info.model_loaded %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">SVM Model Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Model Type:</strong></td>
+                                            <td>{{ model_info.model_type }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Number of Features:</strong></td>
+                                            <td>{{ model_info.n_features }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Number of Classes:</strong></td>
+                                            <td>{{ model_info.n_classes }}</td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <h6>Model Parameters:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Value</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for key, value in model_info.model_params.items %}
+                                                <tr>
+                                                    <td><code>{{ key }}</code></td>
+                                                    <td>{{ value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Vectorizer Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if model_info.vectorizer_loaded %}
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Vectorizer Type:</strong></td>
+                                            <td>{{ model_info.vectorizer_type }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Vocabulary Size:</strong></td>
+                                            <td>{{ model_info.vocabulary_size }}</td>
+                                        </tr>
+                                    </table>
+                                    {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> Vectorizer not loaded
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title">Label Encoder Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if model_info.encoder_loaded %}
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Encoder Type:</strong></td>
+                                            <td>{{ model_info.encoder_type }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Classes:</strong></td>
+                                            <td>
+                                                {% for class in model_info.classes %}
+                                                    <span class="badge badge-secondary">{{ class }}</span>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> Label encoder not loaded
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i> ML Model Not Available</h5>
+                                <p>The SVM model is not currently loaded. This could be due to:</p>
+                                <ul>
+                                    <li>Model files not found in the expected location</li>
+                                    <li>Model files are corrupted or incompatible</li>
+                                    <li>Missing dependencies</li>
+                                </ul>
+                                <p><strong>Expected files:</strong></p>
+                                <ul>
+                                    <li><code>models/sentiment_analysis/sentiment_classifier.pkl</code></li>
+                                    <li><code>models/sentiment_analysis/vectorizer.pkl</code></li>
+                                    <li><code>models/sentiment_analysis/label_encoder.pkl</code></li>
+                                </ul>
+                                <p>The system will fall back to using TextBlob for sentiment analysis.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Quick Actions -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Quick Actions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <a href="{% url 'sentiment_analytics:test_ml' %}" class="btn btn-primary">
+                                        <i class="fas fa-play"></i> Test Model
+                                    </a>
+                                    <a href="{% url 'sentiment_analytics:analyze' %}" class="btn btn-info">
+                                        <i class="fas fa-chart-line"></i> Analyze Text
+                                    </a>
+                                    <a href="{% url 'sentiment_analytics:dashboard' %}" class="btn btn-secondary">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

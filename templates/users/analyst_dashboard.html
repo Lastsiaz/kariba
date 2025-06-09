@@ -96,6 +96,7 @@
 
 {% block content %}
 <div class="dashboard-container">
+    {% csrf_token %}
     <!-- Welcome Section -->
     <div class="welcome-section">
         <div class="d-flex align-items-center">
@@ -129,9 +130,124 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="#" class="nav-link under-development" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature is currently under development">
+            <a href="{% url 'sentiment_analytics:map' %}" class="nav-link">
                 <i class="fas fa-map-marked-alt"></i> Tweet Density Map
             </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'sentiment_analytics:trends' %}" class="nav-link">
+                <i class="fas fa-chart-line"></i> Sentiment Trends
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'sentiment_analytics:analyze' %}" class="nav-link">
+                <i class="fas fa-brain"></i> AI Analysis
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Stream Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-stream me-2"></i>Live Tweet Stream
+            </h5>
+            <div>
+                <button id="startStream" class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-play me-1"></i>Start Stream
+                </button>
+                <button id="stopStream" class="btn btn-danger btn-sm me-2" disabled>
+                    <i class="fas fa-stop me-1"></i>Stop Stream
+                </button>
+                <button id="saveToTraining" class="btn btn-primary btn-sm" disabled>
+                    <i class="fas fa-save me-1"></i>Save to Training
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="tweetCount">0</h4>
+                        <small class="text-muted">Total Tweets</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="positiveCount" class="text-success">0</h4>
+                        <small class="text-muted">Positive</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="negativeCount" class="text-danger">0</h4>
+                        <small class="text-muted">Negative</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="neutralCount" class="text-warning">0</h4>
+                        <small class="text-muted">Neutral</small>
+                    </div>
+                </div>
+            </div>
+            <div id="streamStatus" class="alert alert-info" style="display: none;">
+                <i class="fas fa-info-circle me-2"></i>Stream Status: <span id="statusText">Ready</span>
+            </div>
+            <div id="tweetStream" class="border rounded p-3" style="height: 300px; overflow-y: auto; background: #f8f9fa;">
+                <p class="text-muted text-center">Tweets will appear here when stream is active...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-Time Report Generation -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-bar me-2"></i>Real-Time Report Generation
+            </h5>
+            <div>
+                <button id="generateReport" class="btn btn-info btn-sm me-2" disabled>
+                    <i class="fas fa-file-alt me-1"></i>Generate Report
+                </button>
+                <button id="downloadReport" class="btn btn-success btn-sm" disabled>
+                    <i class="fas fa-download me-1"></i>Download PDF
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Report Settings</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select id="reportType" class="form-select">
+                            <option value="sentiment_summary">Sentiment Summary</option>
+                            <option value="trend_analysis">Trend Analysis</option>
+                            <option value="detailed_analysis">Detailed Analysis</option>
+                            <option value="executive_summary">Executive Summary</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Time Range</label>
+                        <select id="timeRange" class="form-select">
+                            <option value="last_hour">Last Hour</option>
+                            <option value="last_24h">Last 24 Hours</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Report Preview</h6>
+                    <div id="reportPreview" class="border rounded p-3" style="height: 200px; overflow-y: auto; background: #f8f9fa;">
+                        <p class="text-muted text-center">Report preview will appear here...</p>
+                    </div>
+                </div>
+            </div>
+            <div id="reportStatus" class="alert alert-info mt-3" style="display: none;">
+                <i class="fas fa-spinner fa-spin me-2"></i>Generating report...
+            </div>
         </div>
     </div>
 
@@ -205,10 +321,10 @@
                             </div>
                             <p class="mb-1">Create new analytical reports from your data</p>
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action under-development" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature is currently under development">
+                        <a href="{% url 'sentiment_analytics:map' %}" class="list-group-item list-group-item-action">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1">Tweet Density Map</h6>
-                                <small class="text-muted">Coming Soon</small>
+                                <small class="text-success">Available</small>
                             </div>
                             <p class="mb-1">Visualize tweet density across geographic regions</p>
                         </a>
@@ -240,6 +356,403 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
+
+    // Live Stream Variables
+    let streamActive = false;
+    let tweetCount = 0;
+    let positiveCount = 0;
+    let negativeCount = 0;
+    let neutralCount = 0;
+    let collectedTweets = [];
+    let streamInterval;
+
+    // DOM Elements
+    const startBtn = document.getElementById('startStream');
+    const stopBtn = document.getElementById('stopStream');
+    const saveBtn = document.getElementById('saveToTraining');
+    const streamStatus = document.getElementById('streamStatus');
+    const tweetStream = document.getElementById('tweetStream');
+    const tweetCountEl = document.getElementById('tweetCount');
+    const positiveCountEl = document.getElementById('positiveCount');
+    const negativeCountEl = document.getElementById('negativeCount');
+    const neutralCountEl = document.getElementById('neutralCount');
+
+    // Start Stream
+    startBtn.addEventListener('click', function() {
+        streamActive = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        streamStatus.textContent = 'Active';
+        streamStatus.className = 'badge bg-success ms-2';
+        
+        tweetStream.innerHTML = '<p class="text-success text-center">Stream started! Analyzing tweets...</p>';
+        
+        // Start generating tweets
+        streamInterval = setInterval(generateTweet, 2000);
+    });
+
+    // Stop Stream
+    stopBtn.addEventListener('click', function() {
+        streamActive = false;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        streamStatus.textContent = 'Stopped';
+        streamStatus.className = 'badge bg-secondary ms-2';
+        
+        clearInterval(streamInterval);
+        tweetStream.innerHTML += '<p class="text-muted text-center">Stream stopped.</p>';
+    });
+
+    // Save to Training Data
+    saveBtn.addEventListener('click', function() {
+        if (collectedTweets.length === 0) {
+            alert('No tweets to save!');
+            return;
+        }
+
+        fetch('/sentiment-analytics/save-training-data/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                tweets: collectedTweets
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully saved ${data.count} tweets to training data!`);
+                collectedTweets = [];
+                updateCounters();
+            } else {
+                alert('Error saving tweets: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving tweets. Please try again.');
+        });
+    });
+
+    // Generate Sample Tweet
+    function generateTweet() {
+        if (!streamActive) return;
+
+        const sampleTweets = [
+            { text: "This product is amazing! Love the new features.", sentiment: "positive" },
+            { text: "Terrible customer service. Very disappointed.", sentiment: "negative" },
+            { text: "The app works fine, nothing special.", sentiment: "neutral" },
+            { text: "Outstanding performance and reliability!", sentiment: "positive" },
+            { text: "The latest update broke everything.", sentiment: "negative" },
+            { text: "It's okay, gets the job done.", sentiment: "neutral" },
+            { text: "Excellent user experience and design!", sentiment: "positive" },
+            { text: "Frustrated with the bugs and glitches.", sentiment: "negative" },
+            { text: "Average performance, nothing to complain about.", sentiment: "neutral" },
+            { text: "Highly recommend this to everyone!", sentiment: "positive" }
+        ];
+
+        const randomTweet = sampleTweets[Math.floor(Math.random() * sampleTweets.length)];
+        const timestamp = new Date().toLocaleTimeString();
+        
+        // Add to collected tweets
+        collectedTweets.push({
+            text: randomTweet.text,
+            sentiment: randomTweet.sentiment,
+            timestamp: new Date().toISOString()
+        });
+
+        // Update counters
+        tweetCount++;
+        if (randomTweet.sentiment === 'positive') positiveCount++;
+        else if (randomTweet.sentiment === 'negative') negativeCount++;
+        else neutralCount++;
+        
+        updateCounters();
+
+        // Add to stream display
+        const tweetElement = document.createElement('div');
+        tweetElement.className = 'tweet-item mb-2 p-2 border-start border-3';
+        tweetElement.style.borderLeftColor = getSentimentColor(randomTweet.sentiment);
+        tweetElement.style.backgroundColor = getSentimentBgColor(randomTweet.sentiment);
+        
+        tweetElement.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <strong>@user_${Math.floor(Math.random() * 1000)}</strong>
+                    <span class="badge bg-${getSentimentBadgeColor(randomTweet.sentiment)} ms-2">${randomTweet.sentiment}</span>
+                    <p class="mb-1 mt-1">${randomTweet.text}</p>
+                </div>
+                <small class="text-muted">${timestamp}</small>
+            </div>
+        `;
+
+        tweetStream.insertBefore(tweetElement, tweetStream.firstChild);
+
+        // Keep only last 20 tweets in display
+        const tweetItems = tweetStream.querySelectorAll('.tweet-item');
+        if (tweetItems.length > 20) {
+            tweetItems[tweetItems.length - 1].remove();
+        }
+    }
+
+    // Update counters
+    function updateCounters() {
+        tweetCountEl.textContent = `${tweetCount} tweets`;
+        positiveCountEl.textContent = `${positiveCount} positive`;
+        negativeCountEl.textContent = `${negativeCount} negative`;
+        neutralCountEl.textContent = `${neutralCount} neutral`;
+    }
+
+    // Helper functions
+    function getSentimentColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return '#28a745';
+            case 'negative': return '#dc3545';
+            case 'neutral': return '#ffc107';
+            default: return '#6c757d';
+        }
+    }
+
+    function getSentimentBgColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'rgba(40, 167, 69, 0.1)';
+            case 'negative': return 'rgba(220, 53, 69, 0.1)';
+            case 'neutral': return 'rgba(255, 193, 7, 0.1)';
+            default: return 'rgba(108, 117, 125, 0.1)';
+        }
+    }
+
+    function getSentimentBadgeColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'success';
+            case 'negative': return 'danger';
+            case 'neutral': return 'warning';
+            default: return 'secondary';
+        }
+    }
+
+    // Report Generation Variables
+    let currentReport = null;
+    let reportData = {
+        sentiment_summary: {},
+        trend_analysis: {},
+        detailed_analysis: {},
+        executive_summary: {}
+    };
+
+    // Report DOM Elements
+    const generateReportBtn = document.getElementById('generateReport');
+    const downloadReportBtn = document.getElementById('downloadReport');
+    const reportType = document.getElementById('reportType');
+    const timeRange = document.getElementById('timeRange');
+    const reportPreview = document.getElementById('reportPreview');
+    const reportStatus = document.getElementById('reportStatus');
+
+    // Report Generation Functions
+    function generateRealTimeReport() {
+        const type = reportType.value;
+        const range = timeRange.value;
+        
+        reportStatus.style.display = 'block';
+        reportStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating report...';
+        
+        // Simulate report generation with real data
+        setTimeout(() => {
+            const report = createReport(type, range);
+            currentReport = report;
+            displayReportPreview(report);
+            
+            generateReportBtn.disabled = false;
+            downloadReportBtn.disabled = false;
+            reportStatus.style.display = 'none';
+        }, 2000);
+    }
+
+    function createReport(type, range) {
+        const now = new Date();
+        const report = {
+            id: 'REP-' + Date.now(),
+            type: type,
+            range: range,
+            generated_at: now.toISOString(),
+            data: {
+                total_tweets: tweetCount,
+                positive_tweets: positiveCount,
+                negative_tweets: negativeCount,
+                neutral_tweets: neutralCount,
+                sentiment_distribution: {
+                    positive: tweetCount > 0 ? (positiveCount / tweetCount * 100).toFixed(1) : 0,
+                    negative: tweetCount > 0 ? (negativeCount / tweetCount * 100).toFixed(1) : 0,
+                    neutral: tweetCount > 0 ? (neutralCount / tweetCount * 100).toFixed(1) : 0
+                },
+                top_keywords: extractTopKeywords(),
+                sentiment_trend: generateSentimentTrend(),
+                recommendations: generateRecommendations()
+            }
+        };
+        
+        return report;
+    }
+
+    function extractTopKeywords() {
+        // Extract keywords from collected tweets
+        const allText = collectedTweets.map(tweet => tweet.text).join(' ');
+        const words = allText.toLowerCase().match(/\b\w+\b/g) || [];
+        const wordCount = {};
+        
+        words.forEach(word => {
+            if (word.length > 3) {
+                wordCount[word] = (wordCount[word] || 0) + 1;
+            }
+        });
+        
+        return Object.entries(wordCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10)
+            .map(([word, count]) => ({ word, count }));
+    }
+
+    function generateSentimentTrend() {
+        // Generate sentiment trend based on collected data
+        const trend = [];
+        const interval = Math.max(1, Math.floor(collectedTweets.length / 10));
+        
+        for (let i = 0; i < collectedTweets.length; i += interval) {
+            const batch = collectedTweets.slice(i, i + interval);
+            const positive = batch.filter(t => t.sentiment === 'positive').length;
+            const negative = batch.filter(t => t.sentiment === 'negative').length;
+            const neutral = batch.filter(t => t.sentiment === 'neutral').length;
+            
+            trend.push({
+                batch: Math.floor(i / interval) + 1,
+                positive: positive,
+                negative: negative,
+                neutral: neutral,
+                overall_sentiment: positive > negative ? 'positive' : negative > positive ? 'negative' : 'neutral'
+            });
+        }
+        
+        return trend;
+    }
+
+    function generateRecommendations() {
+        const positiveRatio = tweetCount > 0 ? positiveCount / tweetCount : 0;
+        const negativeRatio = tweetCount > 0 ? negativeCount / tweetCount : 0;
+        
+        const recommendations = [];
+        
+        if (negativeRatio > 0.3) {
+            recommendations.push('High negative sentiment detected. Consider addressing customer concerns immediately.');
+        }
+        
+        if (positiveRatio > 0.6) {
+            recommendations.push('Strong positive sentiment. Good opportunity to amplify positive feedback.');
+        }
+        
+        if (neutralRatio > 0.5) {
+            recommendations.push('High neutral sentiment. Consider strategies to increase engagement.');
+        }
+        
+        if (tweetCount < 50) {
+            recommendations.push('Limited data available. Continue monitoring for more comprehensive insights.');
+        }
+        
+        return recommendations;
+    }
+
+    function displayReportPreview(report) {
+        const preview = document.getElementById('reportPreview');
+        
+        let content = `
+            <div class="mb-3">
+                <h6 class="text-primary">${report.type.replace('_', ' ').toUpperCase()} Report</h6>
+                <small class="text-muted">Generated: ${new Date(report.generated_at).toLocaleString()}</small>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <strong>Total Tweets:</strong> ${report.data.total_tweets}<br>
+                    <strong>Positive:</strong> ${report.data.positive_tweets} (${report.data.sentiment_distribution.positive}%)<br>
+                    <strong>Negative:</strong> ${report.data.negative_tweets} (${report.data.sentiment_distribution.negative}%)<br>
+                    <strong>Neutral:</strong> ${report.data.neutral_tweets} (${report.data.sentiment_distribution.neutral}%)
+                </div>
+                <div class="col-6">
+                    <strong>Top Keywords:</strong><br>
+                    ${report.data.top_keywords.slice(0, 3).map(k => k.word).join(', ')}
+                </div>
+            </div>
+            <div class="mt-2">
+                <strong>Key Insights:</strong><br>
+                <small>${report.data.recommendations.slice(0, 2).join('<br>')}</small>
+            </div>
+        `;
+        
+        preview.innerHTML = content;
+    }
+
+    function downloadReport() {
+        if (!currentReport) return;
+        
+        // Create downloadable report content
+        const reportContent = generateReportContent(currentReport);
+        
+        // Create blob and download
+        const blob = new Blob([reportContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sentiment_report_${currentReport.id}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function generateReportContent(report) {
+        return `
+SENTIMENT ANALYSIS REPORT
+========================
+
+Report ID: ${report.id}
+Type: ${report.type.replace('_', ' ').toUpperCase()}
+Time Range: ${report.range.replace('_', ' ').toUpperCase()}
+Generated: ${new Date(report.generated_at).toLocaleString()}
+
+EXECUTIVE SUMMARY
+================
+Total Tweets Analyzed: ${report.data.total_tweets}
+Positive Sentiment: ${report.data.positive_tweets} (${report.data.sentiment_distribution.positive}%)
+Negative Sentiment: ${report.data.negative_tweets} (${report.data.sentiment_distribution.negative}%)
+Neutral Sentiment: ${report.data.neutral_tweets} (${report.data.sentiment_distribution.neutral}%)
+
+TOP KEYWORDS
+============
+${report.data.top_keywords.map((k, i) => `${i + 1}. ${k.word} (${k.count} mentions)`).join('\n')}
+
+SENTIMENT TREND
+==============
+${report.data.sentiment_trend.map(t => `Batch ${t.batch}: ${t.overall_sentiment} (P:${t.positive}, N:${t.negative}, U:${t.neutral})`).join('\n')}
+
+RECOMMENDATIONS
+==============
+${report.data.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+---
+Report generated by AI Sentiment Analysis System
+        `.trim();
+    }
+
+    // Event Listeners for Report Generation
+    generateReportBtn.addEventListener('click', generateRealTimeReport);
+    downloadReportBtn.addEventListener('click', downloadReport);
+    
+    // Enable report generation when tweets are collected
+    function updateReportButtons() {
+        if (tweetCount > 0) {
+            generateReportBtn.disabled = false;
+        }
+    }
 });
 </script>
 {% endblock %} 

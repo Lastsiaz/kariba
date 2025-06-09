@@ -1,0 +1,5 @@
+# This is a placeholder file for the SVM sentiment classifier
+# Replace this file with your actual trained model saved using:
+# import pickle
+# with open('sentiment_classifier.pkl', 'wb') as f:
+#     pickle.dump(svm_model, f) 

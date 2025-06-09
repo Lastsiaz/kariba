@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'analytics.apps.AnalyticsConfig',
     'sentiment.apps.SentimentConfig',
+    'sentiment_analytics.apps.SentimentAnalyticsConfig',
     'rest_framework',
     'corsheaders',
 ]

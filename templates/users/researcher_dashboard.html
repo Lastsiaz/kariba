@@ -140,6 +140,7 @@
 
 {% block content %}
 <div class="dashboard-container">
+    {% csrf_token %}
     <!-- Welcome Section -->
     <div class="welcome-section">
         <div class="d-flex align-items-center">
@@ -171,6 +172,147 @@
             <a href="{% url 'reports' %}" class="nav-link">
                 <i class="fas fa-book"></i> Publications
             </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'sentiment_analytics:map' %}" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i> Geographic Analysis
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'sentiment_analytics:trends' %}" class="nav-link">
+                <i class="fas fa-chart-line"></i> Trend Analysis
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'sentiment_analytics:analyze' %}" class="nav-link">
+                <i class="fas fa-brain"></i> AI Analysis
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Stream Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-stream me-2"></i>Live Research Data Collection
+            </h5>
+            <div>
+                <button id="startResearchStream" class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-play me-1"></i>Start Collection
+                </button>
+                <button id="stopResearchStream" class="btn btn-danger btn-sm me-2" disabled>
+                    <i class="fas fa-stop me-1"></i>Stop Collection
+                </button>
+                <button id="saveResearchData" class="btn btn-primary btn-sm" disabled>
+                    <i class="fas fa-save me-1"></i>Save Dataset
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="researchTweetCount">0</h4>
+                        <small class="text-muted">Total Samples</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="researchPositiveCount" class="text-success">0</h4>
+                        <small class="text-muted">Positive</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="researchNegativeCount" class="text-danger">0</h4>
+                        <small class="text-muted">Negative</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="researchNeutralCount" class="text-warning">0</h4>
+                        <small class="text-muted">Neutral</small>
+                    </div>
+                </div>
+            </div>
+            <div id="researchStreamStatus" class="alert alert-info" style="display: none;">
+                <i class="fas fa-info-circle me-2"></i>Collection Status: <span id="researchStatusText">Ready</span>
+            </div>
+            <div id="researchTweetStream" class="border rounded p-3" style="height: 300px; overflow-y: auto; background: #f8f9fa;">
+                <p class="text-muted text-center">Research data will appear here when collection is active...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-Time Research Report Generation -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-microscope me-2"></i>Real-Time Research Reports
+            </h5>
+            <div>
+                <button id="generateResearchReport" class="btn btn-info btn-sm me-2" disabled>
+                    <i class="fas fa-file-alt me-1"></i>Generate Report
+                </button>
+                <button id="downloadResearchReport" class="btn btn-success btn-sm" disabled>
+                    <i class="fas fa-download me-1"></i>Download PDF
+                </button>
+                <button id="exportDataset" class="btn btn-warning btn-sm ms-2" disabled>
+                    <i class="fas fa-database me-1"></i>Export Dataset
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Research Report Settings</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select id="researchReportType" class="form-select">
+                            <option value="sentiment_analysis">Sentiment Analysis Study</option>
+                            <option value="trend_research">Trend Research Report</option>
+                            <option value="behavioral_analysis">Behavioral Analysis</option>
+                            <option value="linguistic_study">Linguistic Study</option>
+                            <option value="social_media_research">Social Media Research</option>
+                            <option value="academic_paper">Academic Paper Draft</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Research Period</label>
+                        <select id="researchTimeRange" class="form-select">
+                            <option value="last_hour">Last Hour</option>
+                            <option value="last_24h">Last 24 Hours</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="custom">Custom Period</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Analysis Parameters</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeStats" checked>
+                            <label class="form-check-label" for="includeStats">Statistical Analysis</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeCorrelations" checked>
+                            <label class="form-check-label" for="includeCorrelations">Correlation Analysis</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeHypothesis">
+                            <label class="form-check-label" for="includeHypothesis">Hypothesis Testing</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Report Preview</h6>
+                    <div id="researchReportPreview" class="border rounded p-3" style="height: 250px; overflow-y: auto; background: #f8f9fa;">
+                        <p class="text-muted text-center">Research report preview will appear here...</p>
+                    </div>
+                </div>
+            </div>
+            <div id="researchReportStatus" class="alert alert-info mt-3" style="display: none;">
+                <i class="fas fa-spinner fa-spin me-2"></i>Generating research report...
+            </div>
         </div>
     </div>
 
@@ -251,7 +393,7 @@
                             </td>
                             <td>
                                 <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                <a href="#" class="btn btn-sm btn-outline-success">Edit</a>
+                                <button class="btn btn-sm btn-outline-success" onclick="editResearchProject({{ project.id }})">Edit</button>
                             </td>
                         </tr>
                         {% empty %}
@@ -318,7 +460,596 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Add any researcher-specific JavaScript here
+    // Research Stream Variables
+    let researchStreamActive = false;
+    let researchTweetCount = 0;
+    let researchPositiveCount = 0;
+    let researchNegativeCount = 0;
+    let researchNeutralCount = 0;
+    let researchCollectedTweets = [];
+    let researchStreamInterval;
+
+    // Research Report Generation Variables
+    let currentResearchReport = null;
+    let researchReportData = {
+        sentiment_analysis: {},
+        trend_research: {},
+        behavioral_analysis: {},
+        linguistic_study: {},
+        social_media_research: {},
+        academic_paper: {}
+    };
+
+    // Research DOM Elements
+    const startResearchBtn = document.getElementById('startResearchStream');
+    const stopResearchBtn = document.getElementById('stopResearchStream');
+    const researchStreamStatus = document.getElementById('researchStreamStatus');
+    const researchTweetStream = document.getElementById('researchTweetStream');
+    const researchTweetCountEl = document.getElementById('researchTweetCount');
+    const researchPositiveCountEl = document.getElementById('researchPositiveCount');
+    const researchNegativeCountEl = document.getElementById('researchNegativeCount');
+    const researchNeutralCountEl = document.getElementById('researchNeutralCount');
+
+    // Research Report DOM Elements
+    const generateResearchReportBtn = document.getElementById('generateResearchReport');
+    const downloadResearchReportBtn = document.getElementById('downloadResearchReport');
+    const exportDatasetBtn = document.getElementById('exportDataset');
+    const researchReportType = document.getElementById('researchReportType');
+    const researchTimeRange = document.getElementById('researchTimeRange');
+    const researchReportPreview = document.getElementById('researchReportPreview');
+    const researchReportStatus = document.getElementById('researchReportStatus');
+
+    // Start Research Stream
+    startResearchBtn.addEventListener('click', function() {
+        researchStreamActive = true;
+        startResearchBtn.disabled = true;
+        stopResearchBtn.disabled = false;
+        researchStreamStatus.textContent = 'Collecting';
+        researchStreamStatus.className = 'badge bg-success ms-2';
+        
+        researchTweetStream.innerHTML = '<p class="text-success text-center">Research data collection started! Gathering samples...</p>';
+        
+        // Start generating research-focused tweets
+        researchStreamInterval = setInterval(generateResearchTweet, 2500);
+    });
+
+    // Stop Research Stream
+    stopResearchBtn.addEventListener('click', function() {
+        researchStreamActive = false;
+        startResearchBtn.disabled = false;
+        stopResearchBtn.disabled = true;
+        researchStreamStatus.textContent = 'Stopped';
+        researchStreamStatus.className = 'badge bg-secondary ms-2';
+        
+        clearInterval(researchStreamInterval);
+        researchTweetStream.innerHTML += '<p class="text-muted text-center">Data collection stopped.</p>';
+    });
+
+    // Analyze Research Data
+    function generateResearchTweet() {
+        if (!researchStreamActive) return;
+
+        const researchTweets = [
+            { text: "The experimental results show significant improvement in performance metrics.", sentiment: "positive" },
+            { text: "Data analysis reveals concerning patterns in user behavior.", sentiment: "negative" },
+            { text: "The study findings are inconclusive and require further investigation.", sentiment: "neutral" },
+            { text: "Excellent correlation between variables observed in the research.", sentiment: "positive" },
+            { text: "Statistical analysis indicates significant deviation from expected norms.", sentiment: "negative" },
+            { text: "The research methodology appears sound and well-structured.", sentiment: "neutral" },
+            { text: "Breakthrough findings in the latest experimental phase!", sentiment: "positive" },
+            { text: "Critical errors detected in the data collection process.", sentiment: "negative" },
+            { text: "The hypothesis shows mixed results requiring additional testing.", sentiment: "neutral" },
+            { text: "Outstanding validation of the research framework and methodology.", sentiment: "positive" }
+        ];
+
+        const randomTweet = researchTweets[Math.floor(Math.random() * researchTweets.length)];
+        const timestamp = new Date().toLocaleTimeString();
+        
+        // Add to collected tweets
+        researchCollectedTweets.push({
+            text: randomTweet.text,
+            sentiment: randomTweet.sentiment,
+            timestamp: new Date().toISOString(),
+            source: 'research_data'
+        });
+
+        // Update counters
+        researchTweetCount++;
+        if (randomTweet.sentiment === 'positive') researchPositiveCount++;
+        else if (randomTweet.sentiment === 'negative') researchNegativeCount++;
+        else researchNeutralCount++;
+        
+        updateResearchCounters();
+        updateResearchReportButtons(); // Enable report generation when data is available
+
+        // Add to stream display
+        const tweetElement = document.createElement('div');
+        tweetElement.className = 'tweet-item mb-2 p-2 border-start border-3';
+        tweetElement.style.borderLeftColor = getSentimentColor(randomTweet.sentiment);
+        tweetElement.style.backgroundColor = getSentimentBgColor(randomTweet.sentiment);
+        
+        tweetElement.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <strong>@researcher_${Math.floor(Math.random() * 1000)}</strong>
+                    <span class="badge bg-${getSentimentBadgeColor(randomTweet.sentiment)} ms-2">${randomTweet.sentiment}</span>
+                    <p class="mb-1 mt-1">${randomTweet.text}</p>
+                </div>
+                <small class="text-muted">${timestamp}</small>
+            </div>
+        `;
+
+        researchTweetStream.insertBefore(tweetElement, researchTweetStream.firstChild);
+
+        // Keep only last 25 tweets in display
+        const tweetItems = researchTweetStream.querySelectorAll('.tweet-item');
+        if (tweetItems.length > 25) {
+            tweetItems[tweetItems.length - 1].remove();
+        }
+    }
+
+    // Update research counters
+    function updateResearchCounters() {
+        researchTweetCountEl.textContent = `${researchTweetCount} samples`;
+        researchPositiveCountEl.textContent = `${researchPositiveCount} positive`;
+        researchNegativeCountEl.textContent = `${researchNegativeCount} negative`;
+        researchNeutralCountEl.textContent = `${researchNeutralCount} neutral`;
+    }
+
+    // Helper functions
+    function getSentimentColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return '#28a745';
+            case 'negative': return '#dc3545';
+            case 'neutral': return '#ffc107';
+            default: return '#6c757d';
+        }
+    }
+
+    function getSentimentBgColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'rgba(40, 167, 69, 0.1)';
+            case 'negative': return 'rgba(220, 53, 69, 0.1)';
+            case 'neutral': return 'rgba(255, 193, 7, 0.1)';
+            default: return 'rgba(108, 117, 125, 0.1)';
+        }
+    }
+
+    function getSentimentBadgeColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'success';
+            case 'negative': return 'danger';
+            case 'neutral': return 'warning';
+            default: return 'secondary';
+        }
+    }
+
+    function getDominantSentiment(positive, negative, neutral) {
+        const max = Math.max(positive, negative, neutral);
+        if (max === positive) return 'Positive';
+        if (max === negative) return 'Negative';
+        return 'Neutral';
+    }
+
+    // Research Report Generation Functions
+    function generateResearchReport() {
+        if (researchCollectedTweets.length === 0) {
+            alert('No research data available! Please collect some data first.');
+            return;
+        }
+
+        const reportType = researchReportType.value;
+        const timeRange = researchTimeRange.value;
+        
+        // Show generating status
+        researchReportStatus.style.display = 'block';
+        researchReportStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating research report...';
+        
+        // Simulate processing time
+        setTimeout(() => {
+            const report = {
+                id: 'RES_' + Date.now(),
+                type: reportType,
+                range: timeRange,
+                generated_at: new Date().toISOString(),
+                data: generateResearchReportData()
+            };
+            
+            currentResearchReport = report;
+            displayResearchReportPreview(report);
+            
+            // Enable download button
+            downloadResearchReportBtn.disabled = false;
+            
+            // Hide status
+            researchReportStatus.style.display = 'none';
+            
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success mt-3';
+            successAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i>Research report generated successfully!';
+            researchReportPreview.parentNode.insertBefore(successAlert, researchReportPreview.nextSibling);
+            
+            // Remove success message after 3 seconds
+            setTimeout(() => {
+                if (successAlert.parentNode) {
+                    successAlert.remove();
+                }
+            }, 3000);
+        }, 2000);
+    }
+
+    function generateResearchReportData() {
+        const total = researchCollectedTweets.length;
+        const positive = researchCollectedTweets.filter(t => t.sentiment === 'positive').length;
+        const negative = researchCollectedTweets.filter(t => t.sentiment === 'negative').length;
+        const neutral = researchCollectedTweets.filter(t => t.sentiment === 'neutral').length;
+        
+        return {
+            total_samples: total,
+            positive_samples: positive,
+            negative_samples: negative,
+            neutral_samples: neutral,
+            sample_distribution: {
+                positive: ((positive / total) * 100).toFixed(1),
+                negative: ((negative / total) * 100).toFixed(1),
+                neutral: ((neutral / total) * 100).toFixed(1)
+            },
+            statistical_analysis: generateStatisticalAnalysis(),
+            hypothesis_testing: generateHypothesisTesting(),
+            linguistic_analysis: generateLinguisticAnalysis(),
+            research_insights: generateResearchInsights(),
+            conclusions: generateResearchConclusions()
+        };
+    }
+
+    function generateStatisticalAnalysis() {
+        const total = researchTweetCount;
+        const positive = researchPositiveCount;
+        const negative = researchNegativeCount;
+        const neutral = researchNeutralCount;
+        
+        return {
+            sample_size: total,
+            mean_sentiment: calculateMeanSentiment(),
+            standard_deviation: calculateStandardDeviation(),
+            confidence_interval: calculateConfidenceInterval(),
+            chi_square_test: performChiSquareTest(),
+            descriptive_stats: {
+                mode: positive > negative && positive > neutral ? 'positive' : negative > neutral ? 'negative' : 'neutral',
+                median: 'neutral',
+                range: 'positive-negative',
+                variance: calculateVariance()
+            }
+        };
+    }
+
+    function calculateMeanSentiment() {
+        if (researchTweetCount === 0) return 0;
+        const positiveScore = researchPositiveCount * 1;
+        const negativeScore = researchNegativeCount * -1;
+        const neutralScore = researchNeutralCount * 0;
+        return ((positiveScore + negativeScore + neutralScore) / researchTweetCount).toFixed(3);
+    }
+
+    function calculateStandardDeviation() {
+        const mean = parseFloat(calculateMeanSentiment());
+        const variance = calculateVariance();
+        return Math.sqrt(variance).toFixed(3);
+    }
+
+    function calculateVariance() {
+        const mean = parseFloat(calculateMeanSentiment());
+        const positiveDeviation = Math.pow(1 - mean, 2) * researchPositiveCount;
+        const negativeDeviation = Math.pow(-1 - mean, 2) * researchNegativeCount;
+        const neutralDeviation = Math.pow(0 - mean, 2) * researchNeutralCount;
+        const totalDeviation = positiveDeviation + negativeDeviation + neutralDeviation;
+        return (totalDeviation / Math.max(researchTweetCount, 1)).toFixed(3);
+    }
+
+    function calculateConfidenceInterval() {
+        const zScore = 1.96; // 95% confidence level
+        const standardError = parseFloat(calculateStandardDeviation()) / Math.sqrt(researchTweetCount);
+        const marginOfError = zScore * standardError;
+        const mean = parseFloat(calculateMeanSentiment());
+        return {
+            lower: (mean - marginOfError).toFixed(3),
+            upper: (mean + marginOfError).toFixed(3),
+            confidence_level: '95%'
+        };
+    }
+
+    function performChiSquareTest() {
+        const expected = researchTweetCount / 3; // Equal distribution expected
+        const chiSquare = Math.pow(researchPositiveCount - expected, 2) / expected +
+                         Math.pow(researchNegativeCount - expected, 2) / expected +
+                         Math.pow(researchNeutralCount - expected, 2) / expected;
+        
+        return {
+            chi_square_value: chiSquare.toFixed(3),
+            degrees_of_freedom: 2,
+            p_value: chiSquare > 5.991 ? '< 0.05' : '> 0.05',
+            significant: chiSquare > 5.991
+        };
+    }
+
+    function generateHypothesisTesting() {
+        const total = researchTweetCount;
+        const positive = researchPositiveCount;
+        const negative = researchNegativeCount;
+        const neutral = researchNeutralCount;
+        
+        // Null hypothesis: Sentiment distribution is uniform (33.33% each)
+        const expected = total / 3;
+        const chiSquare = Math.pow(positive - expected, 2) / expected + 
+                         Math.pow(negative - expected, 2) / expected + 
+                         Math.pow(neutral - expected, 2) / expected;
+        
+        // Degrees of freedom = 2 (3 categories - 1)
+        const pValue = 0.05; // Simplified p-value calculation
+        const significant = chiSquare > 5.991; // Critical value for df=2, α=0.05
+        
+        return {
+            null_hypothesis: 'Sentiment distribution follows a uniform distribution',
+            alternative_hypothesis: 'Sentiment distribution is not uniform',
+            chi_square_value: chiSquare.toFixed(3),
+            p_value: pValue.toFixed(3),
+            significant: significant,
+            decision: significant ? 'Reject null hypothesis' : 'Fail to reject null hypothesis',
+            conclusion: significant ? 
+                'There is significant evidence that sentiment distribution is not uniform' : 
+                'There is insufficient evidence to conclude sentiment distribution is not uniform'
+        };
+    }
+
+    function performLinguisticAnalysis() {
+        const allText = researchCollectedTweets.map(tweet => tweet.text).join(' ');
+        const words = allText.toLowerCase().match(/\b\w+\b/g) || [];
+        
+        return {
+            total_words: words.length,
+            unique_words: new Set(words).size,
+            average_word_length: words.length > 0 ? (words.reduce((sum, word) => sum + word.length, 0) / words.length).toFixed(2) : 0,
+            vocabulary_diversity: words.length > 0 ? (new Set(words).size / words.length).toFixed(3) : 0,
+            most_common_words: getMostCommonWords(words, 10),
+            sentiment_word_patterns: analyzeSentimentPatterns()
+        };
+    }
+
+    function getMostCommonWords(words, count) {
+        const wordCount = {};
+        words.forEach(word => {
+            if (word.length > 3) {
+                wordCount[word] = (wordCount[word] || 0) + 1;
+            }
+        });
+        
+        return Object.entries(wordCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, count)
+            .map(([word, count]) => ({ word, frequency: count }));
+    }
+
+    function analyzeSentimentPatterns() {
+        const patterns = {
+            positive_words: ['love', 'great', 'amazing', 'excellent', 'good', 'best', 'wonderful'],
+            negative_words: ['hate', 'terrible', 'awful', 'bad', 'worst', 'horrible', 'disappointed'],
+            neutral_words: ['okay', 'fine', 'average', 'normal', 'standard']
+        };
+        
+        const analysis = {};
+        Object.entries(patterns).forEach(([sentiment, words]) => {
+            analysis[sentiment] = words.map(word => ({
+                word: word,
+                count: researchCollectedTweets.filter(tweet => 
+                    tweet.text.toLowerCase().includes(word)
+                ).length
+            }));
+        });
+        
+        return analysis;
+    }
+
+    function generateResearchInsights() {
+        const insights = [];
+        const meanSentiment = parseFloat(calculateMeanSentiment());
+        
+        if (meanSentiment > 0.1) {
+            insights.push('Overall positive sentiment trend observed in the dataset');
+        } else if (meanSentiment < -0.1) {
+            insights.push('Overall negative sentiment trend observed in the dataset');
+        } else {
+            insights.push('Relatively neutral sentiment distribution across the dataset');
+        }
+        
+        if (researchTweetCount > 100) {
+            insights.push('Sufficient sample size for reliable statistical analysis');
+        } else {
+            insights.push('Limited sample size - consider collecting more data for robust analysis');
+        }
+        
+        const chiSquareResult = performChiSquareTest();
+        if (chiSquareResult.significant) {
+            insights.push('Significant variation in sentiment distribution detected');
+        }
+        
+        return insights;
+    }
+
+    function generateResearchConclusions() {
+        const conclusions = [];
+        const meanSentiment = parseFloat(calculateMeanSentiment());
+        const chiSquareResult = performChiSquareTest();
+        
+        conclusions.push(`The study analyzed ${researchTweetCount} social media posts for sentiment analysis.`);
+        
+        if (meanSentiment > 0.1) {
+            conclusions.push('The overall sentiment trend is positive, indicating favorable public opinion.');
+        } else if (meanSentiment < -0.1) {
+            conclusions.push('The overall sentiment trend is negative, indicating concerning public opinion.');
+        } else {
+            conclusions.push('The sentiment distribution is relatively balanced, showing mixed public opinion.');
+        }
+        
+        if (chiSquareResult.significant) {
+            conclusions.push('Statistical analysis reveals significant differences in sentiment distribution.');
+        }
+        
+        conclusions.push('Further research with larger sample sizes and longer time periods is recommended.');
+        
+        return conclusions;
+    }
+
+    function displayResearchReportPreview(report) {
+        const preview = document.getElementById('researchReportPreview');
+        
+        let content = `
+            <div class="mb-3">
+                <h6 class="text-primary">${report.type.replace('_', ' ').toUpperCase()} Report</h6>
+                <small class="text-muted">Generated: ${new Date(report.generated_at).toLocaleString()}</small>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <strong>Sample Size:</strong> ${report.data.total_samples}<br>
+                    <strong>Positive:</strong> ${report.data.positive_samples} (${report.data.sample_distribution.positive}%)<br>
+                    <strong>Negative:</strong> ${report.data.negative_samples} (${report.data.sample_distribution.negative}%)<br>
+                    <strong>Mean Sentiment:</strong> ${report.data.statistical_analysis?.mean_sentiment || 'N/A'}
+                </div>
+                <div class="col-6">
+                    <strong>Chi-Square:</strong> ${report.data.statistical_analysis?.chi_square_test?.chi_square_value || 'N/A'}<br>
+                    <strong>P-Value:</strong> ${report.data.statistical_analysis?.chi_square_test?.p_value || 'N/A'}<br>
+                    <strong>Significant:</strong> ${report.data.statistical_analysis?.chi_square_test?.significant ? 'Yes' : 'No'}<br>
+                    <strong>Vocabulary Diversity:</strong> ${report.data.linguistic_analysis?.vocabulary_diversity || 'N/A'}
+                </div>
+            </div>
+            <div class="mt-2">
+                <strong>Key Findings:</strong><br>
+                <small>${report.data.research_insights.slice(0, 2).join('<br>')}</small>
+            </div>
+        `;
+        
+        preview.innerHTML = content;
+    }
+
+    function downloadResearchReport() {
+        if (!currentResearchReport) return;
+        
+        const reportContent = generateResearchReportContent(currentResearchReport);
+        
+        const blob = new Blob([reportContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `research_report_${currentResearchReport.id}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function exportDataset() {
+        if (researchCollectedTweets.length === 0) return;
+        
+        const csvContent = generateCSVContent();
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `research_dataset_${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function generateCSVContent() {
+        const headers = ['timestamp', 'text', 'sentiment', 'user'];
+        const rows = researchCollectedTweets.map(tweet => [
+            tweet.timestamp,
+            `"${tweet.text.replace(/"/g, '""')}"`,
+            tweet.sentiment,
+            tweet.user || 'anonymous'
+        ]);
+        
+        return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    }
+
+    function generateResearchReportContent(report) {
+        return `
+RESEARCH REPORT - ${report.type.replace('_', ' ').toUpperCase()}
+=====================================================
+
+Report ID: ${report.id}
+Research Period: ${report.range.replace('_', ' ').toUpperCase()}
+Generated: ${new Date(report.generated_at).toLocaleString()}
+
+EXECUTIVE SUMMARY
+=================
+Sample Size: ${report.data.total_samples}
+Positive Samples: ${report.data.positive_samples} (${report.data.sample_distribution.positive}%)
+Negative Samples: ${report.data.negative_samples} (${report.data.sample_distribution.negative}%)
+Neutral Samples: ${report.data.neutral_samples} (${report.data.sample_distribution.neutral}%)
+
+STATISTICAL ANALYSIS
+====================
+Mean Sentiment: ${report.data.statistical_analysis?.mean_sentiment || 'N/A'}
+Standard Deviation: ${report.data.statistical_analysis?.standard_deviation || 'N/A'}
+Confidence Interval (95%): ${report.data.statistical_analysis?.confidence_interval?.lower || 'N/A'} to ${report.data.statistical_analysis?.confidence_interval?.upper || 'N/A'}
+
+Chi-Square Test Results:
+- Chi-Square Value: ${report.data.statistical_analysis?.chi_square_test?.chi_square_value || 'N/A'}
+- P-Value: ${report.data.statistical_analysis?.chi_square_test?.p_value || 'N/A'}
+- Significant: ${report.data.statistical_analysis?.chi_square_test?.significant ? 'Yes' : 'No'}
+
+HYPOTHESIS TESTING
+==================
+${report.data.hypothesis_testing ? `
+Null Hypothesis: ${report.data.hypothesis_testing.null_hypothesis}
+Alternative Hypothesis: ${report.data.hypothesis_testing.alternative_hypothesis}
+Decision: ${report.data.hypothesis_testing.decision}
+Conclusion: ${report.data.hypothesis_testing.conclusion}
+` : 'Not performed'}
+
+LINGUISTIC ANALYSIS
+===================
+Total Words: ${report.data.linguistic_analysis?.total_words || 'N/A'}
+Unique Words: ${report.data.linguistic_analysis?.unique_words || 'N/A'}
+Average Word Length: ${report.data.linguistic_analysis?.average_word_length || 'N/A'}
+Vocabulary Diversity: ${report.data.linguistic_analysis?.vocabulary_diversity || 'N/A'}
+
+RESEARCH INSIGHTS
+=================
+${report.data.research_insights.map((insight, i) => `${i + 1}. ${insight}`).join('\n')}
+
+CONCLUSIONS
+===========
+${report.data.conclusions.map((conclusion, i) => `${i + 1}. ${conclusion}`).join('\n')}
+
+---
+Report generated by AI Research Sentiment Analysis System
+        `.trim();
+    }
+
+    // Event Listeners for Research Report Generation
+    generateResearchReportBtn.addEventListener('click', generateResearchReport);
+    downloadResearchReportBtn.addEventListener('click', downloadResearchReport);
+    exportDatasetBtn.addEventListener('click', exportDataset);
+    
+    // Enable research report generation when data is collected
+    function updateResearchReportButtons() {
+        if (researchTweetCount > 0) {
+            generateResearchReportBtn.disabled = false;
+            exportDatasetBtn.disabled = false;
+        }
+    }
+
+    // Research Project Management Functions
+    function editResearchProject(projectId) {
+        // Implement research project editing functionality
+        console.log('Edit research project:', projectId);
+        alert('Edit functionality for research project ' + projectId + ' will be implemented soon.');
+    }
 });
 </script>
 {% endblock %} 

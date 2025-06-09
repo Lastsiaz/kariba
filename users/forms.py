@@ -204,7 +204,7 @@ class AdminUserRegistrationForm(UserRegistrationForm):
         if commit:
             user.save()
             
-            # Create or update the user profile
+            # Get the user profile (created by the signal) and update it
             role = self.cleaned_data['role']
             department = self.cleaned_data['department']
             
@@ -220,10 +220,10 @@ class AdminUserRegistrationForm(UserRegistrationForm):
             else:
                 department = 'General'
                 
-            UserProfile.objects.create(
-                user=user,
-                role=role,
-                department=department
-            )
+            # Update the existing UserProfile (created by the signal)
+            user_profile = user.userprofile
+            user_profile.role = role
+            user_profile.department = department
+            user_profile.save()
             
         return user 

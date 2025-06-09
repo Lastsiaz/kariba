@@ -27,5 +27,6 @@ urlpatterns = [
     path('users/', include('users.urls')),  # All user-related URLs are now under /users/
     path('analytics/', include('analytics.urls')),
     path('sentiment/', include('sentiment.urls')),
+    path('sentiment-analytics/', include('sentiment_analytics.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Debug User Info{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>Debug User Information</h4>
+        </div>
+        <div class="card-body">
+            <h5>Current User Details:</h5>
+            <table class="table table-bordered">
+                <tr>
+                    <td><strong>Username:</strong></td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Full Name:</strong></td>
+                    <td>{{ user.get_full_name }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Email:</strong></td>
+                    <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Is Authenticated:</strong></td>
+                    <td>{{ user.is_authenticated }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Role:</strong></td>
+                    <td>{{ user.userprofile.role }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Department:</strong></td>
+                    <td>{{ user.userprofile.department }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Is Admin:</strong></td>
+                    <td>{{ user.userprofile.is_admin }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Is Analyst:</strong></td>
+                    <td>{{ user.userprofile.is_analyst }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Is Marketer:</strong></td>
+                    <td>{{ user.userprofile.is_marketer }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Is Researcher:</strong></td>
+                    <td>{{ user.userprofile.is_researcher }}</td>
+                </tr>
+            </table>
+            
+            <h5 class="mt-4">X Streaming Icon Visibility:</h5>
+            <div class="alert alert-info">
+                <p><strong>Should X icon be visible?</strong> 
+                {% if user.is_authenticated %}
+                    <span class="badge bg-success">YES</span> - User is authenticated
+                {% else %}
+                    <span class="badge bg-danger">NO</span> - User is not authenticated
+                {% endif %}
+                </p>
+                
+                <p><strong>User Role Check:</strong></p>
+                <ul>
+                    <li>Is Admin: {% if user.userprofile.is_admin %}<span class="badge bg-success">YES</span>{% else %}<span class="badge bg-secondary">NO</span>{% endif %}</li>
+                    <li>Is Analyst: {% if user.userprofile.is_analyst %}<span class="badge bg-success">YES</span>{% else %}<span class="badge bg-secondary">NO</span>{% endif %}</li>
+                    <li>Is Marketer: {% if user.userprofile.is_marketer %}<span class="badge bg-success">YES</span>{% else %}<span class="badge bg-secondary">NO</span>{% endif %}</li>
+                    <li>Is Researcher: {% if user.userprofile.is_researcher %}<span class="badge bg-success">YES</span>{% else %}<span class="badge bg-secondary">NO</span>{% endif %}</li>
+                </ul>
+            </div>
+            
+            <div class="mt-4">
+                <h5>Test X Streaming Icon:</h5>
+                <p>Look for the X (Twitter) icon in the top right corner of the navbar. It should be visible now for all authenticated users.</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+                <a href="{% url 'user_list' %}" class="btn btn-secondary">Go to User List</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

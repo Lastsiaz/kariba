@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test ML Model - Sentiment Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-brain"></i> ML Model Testing
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Model Status -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Model Status</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><strong>ML Model:</strong> 
+                                                {% if model_status.ml_model_available %}
+                                                    <span class="badge badge-success">Available</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Not Available</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><strong>TextBlob:</strong> 
+                                                {% if model_status.textblob_available %}
+                                                    <span class="badge badge-success">Available</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Not Available</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p><strong>Current Method:</strong> 
+                                        <span class="badge badge-info">{{ model_status.current_method }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Quick Actions</h5>
+                                    <a href="{% url 'sentiment_analytics:model_info' %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-info-circle"></i> Model Details
+                                    </a>
+                                    <a href="{% url 'sentiment_analytics:analyze' %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-line"></i> Analyze Text
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Form -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Test Sentiment Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="testForm">
+                                        <div class="form-group">
+                                            <label for="testText">Enter text to analyze:</label>
+                                            <textarea class="form-control" id="testText" rows="4" 
+                                                      placeholder="Enter text for sentiment analysis..."></textarea>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label>Sample Texts:</label>
+                                            <div class="btn-group-vertical w-100" role="group">
+                                                {% for text in sample_texts %}
+                                                <button type="button" class="btn btn-outline-secondary btn-sm sample-text-btn" 
+                                                        data-text="{{ text }}">
+                                                    {{ text|truncatechars:50 }}
+                                                </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="compareMethods">
+                                                <label class="custom-control-label" for="compareMethods">
+                                                    Compare ML Model vs TextBlob
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-play"></i> Analyze
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Results</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="results">
+                                        <p class="text-muted">Enter text and click "Analyze" to see results.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">Analyzing sentiment...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Sample text buttons
+    $('.sample-text-btn').click(function() {
+        const text = $(this).data('text');
+        $('#testText').val(text);
+    });
+    
+    // Form submission
+    $('#testForm').submit(function(e) {
+        e.preventDefault();
+        
+        const text = $('#testText').val().trim();
+        if (!text) {
+            alert('Please enter some text to analyze.');
+            return;
+        }
+        
+        const compare = $('#compareMethods').is(':checked');
+        
+        // Show loading modal
+        $('#loadingModal').modal('show');
+        
+        // Send AJAX request
+        $.ajax({
+            url: '{% url "sentiment_analytics:test_ml" %}',
+            method: 'POST',
+            data: {
+                text: text,
+                compare: compare,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                displayResults(response, compare);
+            },
+            error: function(xhr, status, error) {
+                displayError('Analysis failed: ' + error);
+            },
+            complete: function() {
+                $('#loadingModal').modal('hide');
+            }
+        });
+    });
+    
+    function displayResults(data, compare) {
+        let html = '';
+        
+        if (compare) {
+            // Comparison results
+            html = `
+                <h6>Text: "${data.text}"</h6>
+                <div class="row">
+                    <div class="col-6">
+                        <h6>ML Model Results:</h6>
+                        ${formatSentimentResult(data.ml_model)}
+                    </div>
+                    <div class="col-6">
+                        <h6>TextBlob Results:</h6>
+                        ${formatSentimentResult(data.textblob)}
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <strong>Agreement:</strong> 
+                    ${data.agreement ? 
+                        '<span class="badge badge-success">Methods Agree</span>' : 
+                        '<span class="badge badge-warning">Methods Disagree</span>'}
+                </div>
+            `;
+        } else {
+            // Individual results
+            html = `
+                <h6>Text: "${data.text}"</h6>
+                <div class="row">
+                    <div class="col-6">
+                        <h6>ML Model:</h6>
+                        ${formatSentimentResult(data.ml_result)}
+                    </div>
+                    <div class="col-6">
+                        <h6>TextBlob:</h6>
+                        ${formatSentimentResult(data.textblob_result)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        $('#results').html(html);
+    }
+    
+    function formatSentimentResult(result) {
+        if (!result) {
+            return '<span class="text-danger">Error</span>';
+        }
+        
+        const sentimentClass = getSentimentClass(result.sentiment);
+        const confidencePercent = Math.round(result.confidence_score * 100);
+        
+        return `
+            <div class="mb-2">
+                <strong>Sentiment:</strong> 
+                <span class="badge ${sentimentClass}">${result.sentiment}</span>
+            </div>
+            <div class="mb-2">
+                <strong>Confidence:</strong> ${confidencePercent}%
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar ${sentimentClass}" style="width: ${confidencePercent}%"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <strong>Method:</strong> ${result.method}
+            </div>
+        `;
+    }
+    
+    function getSentimentClass(sentiment) {
+        switch(sentiment.toLowerCase()) {
+            case 'positive': return 'badge-success';
+            case 'negative': return 'badge-danger';
+            case 'neutral': return 'badge-secondary';
+            default: return 'badge-warning';
+        }
+    }
+    
+    function displayError(message) {
+        $('#results').html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> ${message}
+            </div>
+        `);
+    }
+});
+</script>
+{% endblock %} 

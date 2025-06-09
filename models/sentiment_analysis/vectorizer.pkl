@@ -1,0 +1,5 @@
+# This is a placeholder file for the text vectorizer
+# Replace this file with your actual vectorizer saved using:
+# import pickle
+# with open('vectorizer.pkl', 'wb') as f:
+#     pickle.dump(vectorizer, f) 

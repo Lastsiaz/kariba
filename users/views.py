@@ -972,3 +972,8 @@ def create_report(request):
     }
     
     return render(request, 'users/create_report.html', context)
+
+@login_required
+def debug_user(request):
+    """Debug view to check user information and X streaming icon visibility"""
+    return render(request, 'debug_user.html')

@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Sentiment Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-container {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .result-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 2rem;
+        border-left: 4px solid #007bff;
+    }
+    .sentiment-score {
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-align: center;
+    }
+    .sentiment-label {
+        font-size: 1.3rem;
+        color: #6c757d;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .loading-spinner {
+        display: none;
+    }
+    .method-selector {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .confidence-bar {
+        height: 25px;
+        border-radius: 12px;
+        margin: 0.5rem 0;
+    }
+    .comparison-result {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    .method-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <h2 class="mb-4">
+                <i class="fas fa-brain me-2"></i>AI Sentiment Analysis
+            </h2>
+            
+            <div class="analysis-container">
+                <form id="sentimentForm" method="post">
+                    {% csrf_token %}
+                    
+                    <div class="method-selector">
+                        <h5 class="mb-3">Analysis Method</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" id="methodAuto" value="auto" checked>
+                                    <label class="form-check-label" for="methodAuto">
+                                        <i class="fas fa-magic me-2"></i>Auto (Recommended)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" id="methodML" value="ml">
+                                    <label class="form-check-label" for="methodML">
+                                        <i class="fas fa-robot me-2"></i>Machine Learning
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" id="methodTextBlob" value="textblob">
+                                    <label class="form-check-label" for="methodTextBlob">
+                                        <i class="fas fa-chart-line me-2"></i>TextBlob
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="textInput" class="form-label">Text for Analysis</label>
+                        <textarea class="form-control" id="textInput" name="text" rows="6" placeholder="Enter the text you want to analyze for sentiment..." required></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                            <i class="fas fa-search me-2"></i>Analyze Sentiment
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="resultCard" class="result-card" style="display: none;">
+                <div class="text-center mb-4">
+                    <div class="sentiment-score" id="sentimentScore">0.0</div>
+                    <div class="sentiment-label" id="sentimentLabel">Neutral</div>
+                    <span class="badge bg-info method-badge" id="methodBadge">Auto</span>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center">
+                        <h6>Positive</h6>
+                        <div class="progress confidence-bar">
+                            <div id="positiveBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="positivePercent">0%</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h6>Neutral</h6>
+                        <div class="progress confidence-bar">
+                            <div id="neutralBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="neutralPercent">0%</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h6>Negative</h6>
+                        <div class="progress confidence-bar">
+                            <div id="negativeBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="negativePercent">0%</small>
+                    </div>
+                </div>
+
+                <div id="comparisonResults" style="display: none;">
+                    <h6 class="mb-3">Method Comparison</h6>
+                    <div id="comparisonContainer"></div>
+                </div>
+            </div>
+
+            <!-- Sample Texts -->
+            <div class="analysis-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>Try These Sample Texts
+                </h5>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100 sample-text" data-text="I love this product! It's absolutely amazing and works perfectly.">
+                            <i class="fas fa-thumbs-up me-1"></i>Positive
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-danger btn-sm w-100 sample-text" data-text="This is terrible! I hate it and it doesn't work at all.">
+                            <i class="fas fa-thumbs-down me-1"></i>Negative
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-warning btn-sm w-100 sample-text" data-text="It's okay, nothing special but gets the job done.">
+                            <i class="fas fa-minus me-1"></i>Neutral
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-info btn-sm w-100 sample-text" data-text="The service was excellent and the staff was very helpful.">
+                            <i class="fas fa-star me-1"></i>Service Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('sentimentForm');
+    const textInput = document.getElementById('textInput');
+    const resultCard = document.getElementById('resultCard');
+    const comparisonResults = document.getElementById('comparisonResults');
+
+    // Sample text buttons
+    document.querySelectorAll('.sample-text').forEach(button => {
+        button.addEventListener('click', function() {
+            textInput.value = this.dataset.text;
+            textInput.focus();
+        });
+    });
+
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const spinner = form.querySelector('.loading-spinner');
+        const method = form.querySelector('input[name="method"]:checked').value;
+        const text = textInput.value.trim();
+        
+        if (!text) {
+            alert('Please enter some text to analyze.');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.style.display = 'inline-block';
+        resultCard.style.display = 'none';
+        
+        try {
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('method', method);
+            
+            const response = await fetch('{% url "sentiment_analytics:analyze" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                displayResults(data, method);
+            } else {
+                throw new Error(data.error || 'Failed to analyze sentiment');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error analyzing sentiment: ' + error.message);
+        } finally {
+            // Reset loading state
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+        }
+    });
+
+    function displayResults(data, method) {
+        // Update sentiment score and label
+        document.getElementById('sentimentScore').textContent = data.score || '0.0';
+        document.getElementById('sentimentLabel').textContent = data.sentiment || 'Neutral';
+        document.getElementById('methodBadge').textContent = method.toUpperCase();
+
+        // Update progress bars
+        const positive = data.positive || 0;
+        const neutral = data.neutral || 0;
+        const negative = data.negative || 0;
+
+        document.getElementById('positiveBar').style.width = `${positive * 100}%`;
+        document.getElementById('neutralBar').style.width = `${neutral * 100}%`;
+        document.getElementById('negativeBar').style.width = `${negative * 100}%`;
+
+        document.getElementById('positivePercent').textContent = `${(positive * 100).toFixed(1)}%`;
+        document.getElementById('neutralPercent').textContent = `${(neutral * 100).toFixed(1)}%`;
+        document.getElementById('negativePercent').textContent = `${(negative * 100).toFixed(1)}%`;
+
+        // Show comparison if available
+        if (data.comparison) {
+            displayComparison(data.comparison);
+            comparisonResults.style.display = 'block';
+        } else {
+            comparisonResults.style.display = 'none';
+        }
+
+        // Show result card
+        resultCard.style.display = 'block';
+        
+        // Scroll to results
+        resultCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function displayComparison(comparison) {
+        const container = document.getElementById('comparisonContainer');
+        container.innerHTML = '';
+
+        Object.entries(comparison).forEach(([method, result]) => {
+            const methodCard = document.createElement('div');
+            methodCard.className = 'comparison-result';
+            methodCard.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${method.toUpperCase()}</strong>
+                        <span class="badge bg-${getSentimentBadgeColor(result.sentiment)} ms-2">${result.sentiment}</span>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">${result.score || '0.0'}</div>
+                        <small class="text-muted">Confidence</small>
+                    </div>
+                </div>
+            `;
+            container.appendChild(methodCard);
+        });
+    }
+
+    function getSentimentBadgeColor(sentiment) {
+        switch(sentiment.toLowerCase()) {
+            case 'positive': return 'success';
+            case 'negative': return 'danger';
+            case 'neutral': return 'warning';
+            default: return 'secondary';
+        }
+    }
+});
+</script>
+{% endblock %} 

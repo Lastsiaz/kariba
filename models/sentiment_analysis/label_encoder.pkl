@@ -1,0 +1,5 @@
+# This is a placeholder file for the label encoder
+# Replace this file with your actual label encoder saved using:
+# import pickle
+# with open('label_encoder.pkl', 'wb') as f:
+#     pickle.dump(label_encoder, f) 

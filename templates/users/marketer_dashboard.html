@@ -81,6 +81,7 @@
 
 {% block content %}
 <div class="dashboard-container">
+    {% csrf_token %}
     <!-- Welcome Section -->
     <div class="welcome-section">
         <div class="d-flex align-items-center">
@@ -132,6 +133,128 @@
                     <h2 class="card-text">{{ engagement_rate }}%</h2>
                     <p class="text-muted">Average engagement</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Stream Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-stream me-2"></i>Live Marketing Stream
+            </h5>
+            <div>
+                <button id="startMarketingStream" class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-play me-1"></i>Start Stream
+                </button>
+                <button id="stopMarketingStream" class="btn btn-danger btn-sm me-2" disabled>
+                    <i class="fas fa-stop me-1"></i>Stop Stream
+                </button>
+                <button id="saveMarketingData" class="btn btn-primary btn-sm" disabled>
+                    <i class="fas fa-save me-1"></i>Save Data
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="marketingTweetCount">0</h4>
+                        <small class="text-muted">Total Tweets</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="marketingPositiveCount" class="text-success">0</h4>
+                        <small class="text-muted">Positive</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="marketingNegativeCount" class="text-danger">0</h4>
+                        <small class="text-muted">Negative</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 id="marketingNeutralCount" class="text-warning">0</h4>
+                        <small class="text-muted">Neutral</small>
+                    </div>
+                </div>
+            </div>
+            <div id="marketingStreamStatus" class="alert alert-info" style="display: none;">
+                <i class="fas fa-info-circle me-2"></i>Stream Status: <span id="marketingStatusText">Ready</span>
+            </div>
+            <div id="marketingTweetStream" class="border rounded p-3" style="height: 300px; overflow-y: auto; background: #f8f9fa;">
+                <p class="text-muted text-center">Marketing insights will appear here when stream is active...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-Time Marketing Report Generation -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-line me-2"></i>Real-Time Marketing Reports
+            </h5>
+            <div>
+                <button id="generateMarketingReport" class="btn btn-info btn-sm me-2" disabled>
+                    <i class="fas fa-file-alt me-1"></i>Generate Report
+                </button>
+                <button id="downloadMarketingReport" class="btn btn-success btn-sm" disabled>
+                    <i class="fas fa-download me-1"></i>Download PDF
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Marketing Report Settings</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select id="marketingReportType" class="form-select">
+                            <option value="brand_sentiment">Brand Sentiment Analysis</option>
+                            <option value="campaign_performance">Campaign Performance</option>
+                            <option value="customer_insights">Customer Insights</option>
+                            <option value="competitive_analysis">Competitive Analysis</option>
+                            <option value="market_trends">Market Trends</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Time Range</label>
+                        <select id="marketingTimeRange" class="form-select">
+                            <option value="last_hour">Last Hour</option>
+                            <option value="last_24h">Last 24 Hours</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Focus Areas</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focusBrand" checked>
+                            <label class="form-check-label" for="focusBrand">Brand Mentions</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focusProducts" checked>
+                            <label class="form-check-label" for="focusProducts">Product Feedback</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focusCompetitors">
+                            <label class="form-check-label" for="focusCompetitors">Competitor Analysis</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Report Preview</h6>
+                    <div id="marketingReportPreview" class="border rounded p-3" style="height: 250px; overflow-y: auto; background: #f8f9fa;">
+                        <p class="text-muted text-center">Marketing report preview will appear here...</p>
+                    </div>
+                </div>
+            </div>
+            <div id="marketingReportStatus" class="alert alert-info mt-3" style="display: none;">
+                <i class="fas fa-spinner fa-spin me-2"></i>Generating marketing report...
             </div>
         </div>
     </div>
@@ -239,7 +362,7 @@
                 </a>
             </div>
             <div class="col-md-4">
-                <a href="#" class="nav-link under-development" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature is currently under development">
+                <a href="{% url 'sentiment_analytics:map' %}" class="nav-link">
                     <i class="fas fa-map-marked-alt"></i> Tweet Density Map
                 </a>
             </div>
@@ -294,6 +417,167 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
     
+    // Marketing Stream Variables
+    let marketingStreamActive = false;
+    let marketingTweetCount = 0;
+    let marketingPositiveCount = 0;
+    let marketingNegativeCount = 0;
+    let marketingNeutralCount = 0;
+    let marketingCollectedTweets = [];
+    let marketingStreamInterval;
+
+    // Marketing DOM Elements
+    const startMarketingBtn = document.getElementById('startMarketingStream');
+    const stopMarketingBtn = document.getElementById('stopMarketingStream');
+    const exportMarketingBtn = document.getElementById('exportMarketingData');
+    const marketingStreamStatus = document.getElementById('marketingStreamStatus');
+    const marketingTweetStream = document.getElementById('marketingTweetStream');
+    const marketingTweetCountEl = document.getElementById('marketingTweetCount');
+    const marketingPositiveCountEl = document.getElementById('marketingPositiveCount');
+    const marketingNegativeCountEl = document.getElementById('marketingNegativeCount');
+    const marketingNeutralCountEl = document.getElementById('marketingNeutralCount');
+
+    // Start Marketing Stream
+    startMarketingBtn.addEventListener('click', function() {
+        marketingStreamActive = true;
+        startMarketingBtn.disabled = true;
+        stopMarketingBtn.disabled = false;
+        marketingStreamStatus.textContent = 'Monitoring';
+        marketingStreamStatus.className = 'badge bg-success ms-2';
+        
+        marketingTweetStream.innerHTML = '<p class="text-success text-center">Brand monitoring started! Analyzing brand sentiment...</p>';
+        
+        // Start generating marketing-focused tweets
+        marketingStreamInterval = setInterval(generateMarketingTweet, 3000);
+    });
+
+    // Stop Marketing Stream
+    stopMarketingBtn.addEventListener('click', function() {
+        marketingStreamActive = false;
+        startMarketingBtn.disabled = false;
+        stopMarketingBtn.disabled = true;
+        marketingStreamStatus.textContent = 'Stopped';
+        marketingStreamStatus.className = 'badge bg-secondary ms-2';
+        
+        clearInterval(marketingStreamInterval);
+        marketingTweetStream.innerHTML += '<p class="text-muted text-center">Brand monitoring stopped.</p>';
+    });
+
+    // Export Marketing Data
+    exportMarketingBtn.addEventListener('click', function() {
+        if (marketingCollectedTweets.length === 0) {
+            alert('No data to export!');
+            return;
+        }
+
+        const dataStr = JSON.stringify(marketingCollectedTweets, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `brand_sentiment_data_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Generate Marketing Tweet
+    function generateMarketingTweet() {
+        if (!marketingStreamActive) return;
+
+        const marketingTweets = [
+            { text: "Just tried the new product and it's absolutely amazing! #brand #loveit", sentiment: "positive" },
+            { text: "Disappointed with the customer service. Been waiting for hours.", sentiment: "negative" },
+            { text: "The product works as expected, nothing special but reliable.", sentiment: "neutral" },
+            { text: "Outstanding quality and fast delivery! Highly recommend!", sentiment: "positive" },
+            { text: "The app keeps crashing after the latest update. Very frustrating.", sentiment: "negative" },
+            { text: "It's okay, meets basic expectations.", sentiment: "neutral" },
+            { text: "Best purchase I've made this year! #satisfied", sentiment: "positive" },
+            { text: "Terrible experience with support team. Not helpful at all.", sentiment: "negative" },
+            { text: "Average product, does what it says on the box.", sentiment: "neutral" },
+            { text: "Incredible value for money! Will definitely buy again!", sentiment: "positive" }
+        ];
+
+        const randomTweet = marketingTweets[Math.floor(Math.random() * marketingTweets.length)];
+        const timestamp = new Date().toLocaleTimeString();
+        
+        // Add to collected tweets
+        marketingCollectedTweets.push({
+            text: randomTweet.text,
+            sentiment: randomTweet.sentiment,
+            timestamp: new Date().toISOString(),
+            source: 'brand_monitor'
+        });
+
+        // Update counters
+        marketingTweetCount++;
+        if (randomTweet.sentiment === 'positive') marketingPositiveCount++;
+        else if (randomTweet.sentiment === 'negative') marketingNegativeCount++;
+        else marketingNeutralCount++;
+        
+        updateMarketingCounters();
+
+        // Add to stream display
+        const tweetElement = document.createElement('div');
+        tweetElement.className = 'tweet-item mb-2 p-2 border-start border-3';
+        tweetElement.style.borderLeftColor = getSentimentColor(randomTweet.sentiment);
+        tweetElement.style.backgroundColor = getSentimentBgColor(randomTweet.sentiment);
+        
+        tweetElement.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <strong>@customer_${Math.floor(Math.random() * 1000)}</strong>
+                    <span class="badge bg-${getSentimentBadgeColor(randomTweet.sentiment)} ms-2">${randomTweet.sentiment}</span>
+                    <p class="mb-1 mt-1">${randomTweet.text}</p>
+                </div>
+                <small class="text-muted">${timestamp}</small>
+            </div>
+        `;
+
+        marketingTweetStream.insertBefore(tweetElement, marketingTweetStream.firstChild);
+
+        // Keep only last 15 tweets in display
+        const tweetItems = marketingTweetStream.querySelectorAll('.tweet-item');
+        if (tweetItems.length > 15) {
+            tweetItems[tweetItems.length - 1].remove();
+        }
+    }
+
+    // Update marketing counters
+    function updateMarketingCounters() {
+        marketingTweetCountEl.textContent = `${marketingTweetCount} tweets`;
+        marketingPositiveCountEl.textContent = `${marketingPositiveCount} positive`;
+        marketingNegativeCountEl.textContent = `${marketingNegativeCount} negative`;
+        marketingNeutralCountEl.textContent = `${marketingNeutralCount} neutral`;
+    }
+
+    // Helper functions
+    function getSentimentColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return '#28a745';
+            case 'negative': return '#dc3545';
+            case 'neutral': return '#ffc107';
+            default: return '#6c757d';
+        }
+    }
+
+    function getSentimentBgColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'rgba(40, 167, 69, 0.1)';
+            case 'negative': return 'rgba(220, 53, 69, 0.1)';
+            case 'neutral': return 'rgba(255, 193, 7, 0.1)';
+            default: return 'rgba(108, 117, 125, 0.1)';
+        }
+    }
+
+    function getSentimentBadgeColor(sentiment) {
+        switch(sentiment) {
+            case 'positive': return 'success';
+            case 'negative': return 'danger';
+            case 'neutral': return 'warning';
+            default: return 'secondary';
+        }
+    }
+    
     // Handle new analysis creation
     document.getElementById('createAnalysisBtn').addEventListener('click', function() {
         const name = document.getElementById('analysisName').value;
@@ -331,6 +615,318 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Error creating analysis. Please try again.');
         });
     });
+
+    // Marketing Report Generation Variables
+    let currentMarketingReport = null;
+    let marketingReportData = {
+        brand_sentiment: {},
+        campaign_performance: {},
+        customer_insights: {},
+        competitive_analysis: {},
+        market_trends: {}
+    };
+
+    // Marketing Report DOM Elements
+    const generateMarketingReportBtn = document.getElementById('generateMarketingReport');
+    const downloadMarketingReportBtn = document.getElementById('downloadMarketingReport');
+    const marketingReportType = document.getElementById('marketingReportType');
+    const marketingTimeRange = document.getElementById('marketingTimeRange');
+    const marketingReportPreview = document.getElementById('marketingReportPreview');
+    const marketingReportStatus = document.getElementById('marketingReportStatus');
+
+    // Marketing Report Generation Functions
+    function generateMarketingReport() {
+        const type = marketingReportType.value;
+        const range = marketingTimeRange.value;
+        const focusBrand = document.getElementById('focusBrand').checked;
+        const focusProducts = document.getElementById('focusProducts').checked;
+        const focusCompetitors = document.getElementById('focusCompetitors').checked;
+        
+        marketingReportStatus.style.display = 'block';
+        marketingReportStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating marketing report...';
+        
+        // Simulate marketing report generation with real data
+        setTimeout(() => {
+            const report = createMarketingReport(type, range, { focusBrand, focusProducts, focusCompetitors });
+            currentMarketingReport = report;
+            displayMarketingReportPreview(report);
+            
+            generateMarketingReportBtn.disabled = false;
+            downloadMarketingReportBtn.disabled = false;
+            marketingReportStatus.style.display = 'none';
+        }, 2500);
+    }
+
+    function createMarketingReport(type, range, focus) {
+        const now = new Date();
+        const report = {
+            id: 'MKT-REP-' + Date.now(),
+            type: type,
+            range: range,
+            focus: focus,
+            generated_at: now.toISOString(),
+            data: {
+                total_tweets: marketingTweetCount,
+                positive_tweets: marketingPositiveCount,
+                negative_tweets: marketingNegativeCount,
+                neutral_tweets: marketingNeutralCount,
+                sentiment_distribution: {
+                    positive: marketingTweetCount > 0 ? (marketingPositiveCount / marketingTweetCount * 100).toFixed(1) : 0,
+                    negative: marketingTweetCount > 0 ? (marketingNegativeCount / marketingTweetCount * 100).toFixed(1) : 0,
+                    neutral: marketingTweetCount > 0 ? (marketingNeutralCount / marketingTweetCount * 100).toFixed(1) : 0
+                },
+                brand_mentions: extractBrandMentions(),
+                product_feedback: extractProductFeedback(),
+                competitor_analysis: focus.focusCompetitors ? analyzeCompetitors() : null,
+                market_trends: generateMarketTrends(),
+                marketing_recommendations: generateMarketingRecommendations(),
+                roi_insights: calculateROIInsights()
+            }
+        };
+        
+        return report;
+    }
+
+    function extractBrandMentions() {
+        const brandKeywords = ['brand', 'company', 'product', 'service', 'app', 'platform'];
+        const mentions = [];
+        
+        marketingCollectedTweets.forEach(tweet => {
+            const text = tweet.text.toLowerCase();
+            brandKeywords.forEach(keyword => {
+                if (text.includes(keyword)) {
+                    mentions.push({
+                        keyword: keyword,
+                        sentiment: tweet.sentiment,
+                        text: tweet.text.substring(0, 100) + '...'
+                    });
+                }
+            });
+        });
+        
+        return mentions.slice(0, 10);
+    }
+
+    function extractProductFeedback() {
+        const productKeywords = ['feature', 'update', 'version', 'bug', 'performance', 'interface', 'design'];
+        const feedback = [];
+        
+        marketingCollectedTweets.forEach(tweet => {
+            const text = tweet.text.toLowerCase();
+            productKeywords.forEach(keyword => {
+                if (text.includes(keyword)) {
+                    feedback.push({
+                        keyword: keyword,
+                        sentiment: tweet.sentiment,
+                        text: tweet.text.substring(0, 100) + '...',
+                        category: categorizeFeedback(keyword)
+                    });
+                }
+            });
+        });
+        
+        return feedback.slice(0, 15);
+    }
+
+    function categorizeFeedback(keyword) {
+        const categories = {
+            'feature': 'Product Features',
+            'update': 'Updates & Releases',
+            'version': 'Version Management',
+            'bug': 'Technical Issues',
+            'performance': 'Performance',
+            'interface': 'User Interface',
+            'design': 'Design & UX'
+        };
+        return categories[keyword] || 'General';
+    }
+
+    function analyzeCompetitors() {
+        const competitorKeywords = ['competitor', 'alternative', 'better than', 'vs', 'compared to'];
+        const analysis = {
+            mentions: 0,
+            sentiment: 'neutral',
+            insights: []
+        };
+        
+        marketingCollectedTweets.forEach(tweet => {
+            const text = tweet.text.toLowerCase();
+            competitorKeywords.forEach(keyword => {
+                if (text.includes(keyword)) {
+                    analysis.mentions++;
+                    analysis.insights.push({
+                        text: tweet.text.substring(0, 100) + '...',
+                        sentiment: tweet.sentiment
+                    });
+                }
+            });
+        });
+        
+        return analysis;
+    }
+
+    function generateMarketTrends() {
+        const trends = [];
+        const sentimentTrend = [];
+        const interval = Math.max(1, Math.floor(marketingCollectedTweets.length / 5));
+        
+        for (let i = 0; i < marketingCollectedTweets.length; i += interval) {
+            const batch = marketingCollectedTweets.slice(i, i + interval);
+            const positive = batch.filter(t => t.sentiment === 'positive').length;
+            const negative = batch.filter(t => t.sentiment === 'negative').length;
+            
+            sentimentTrend.push({
+                period: `Period ${Math.floor(i / interval) + 1}`,
+                positive_ratio: positive / batch.length,
+                negative_ratio: negative / batch.length,
+                trend: positive > negative ? 'improving' : negative > positive ? 'declining' : 'stable'
+            });
+        }
+        
+        trends.push({
+            name: 'Sentiment Trend',
+            data: sentimentTrend,
+            insight: sentimentTrend[sentimentTrend.length - 1]?.trend || 'stable'
+        });
+        
+        return trends;
+    }
+
+    function generateMarketingRecommendations() {
+        const positiveRatio = marketingTweetCount > 0 ? marketingPositiveCount / marketingTweetCount : 0;
+        const negativeRatio = marketingTweetCount > 0 ? marketingNegativeCount / marketingTweetCount : 0;
+        
+        const recommendations = [];
+        
+        if (positiveRatio > 0.6) {
+            recommendations.push('Strong positive sentiment detected. Consider amplifying positive feedback through testimonials and case studies.');
+            recommendations.push('High engagement opportunity - launch targeted campaigns to capitalize on positive momentum.');
+        }
+        
+        if (negativeRatio > 0.3) {
+            recommendations.push('Negative sentiment spike detected. Implement crisis communication strategy immediately.');
+            recommendations.push('Consider product improvements or feature updates to address customer concerns.');
+        }
+        
+        if (marketingTweetCount < 100) {
+            recommendations.push('Limited data available. Increase monitoring frequency and expand keyword tracking.');
+        }
+        
+        recommendations.push('Continue monitoring brand mentions and sentiment trends for proactive marketing strategies.');
+        
+        return recommendations;
+    }
+
+    function calculateROIInsights() {
+        const engagementScore = marketingTweetCount * 0.1;
+        const sentimentScore = (marketingPositiveCount - marketingNegativeCount) / Math.max(marketingTweetCount, 1);
+        
+        return {
+            engagement_score: engagementScore.toFixed(2),
+            sentiment_score: sentimentScore.toFixed(2),
+            overall_roi: ((engagementScore + sentimentScore) / 2).toFixed(2),
+            recommendation: sentimentScore > 0 ? 'Positive ROI trend - continue current strategies' : 'Monitor and adjust marketing approach'
+        };
+    }
+
+    function displayMarketingReportPreview(report) {
+        const preview = document.getElementById('marketingReportPreview');
+        
+        let content = `
+            <div class="mb-3">
+                <h6 class="text-primary">${report.type.replace('_', ' ').toUpperCase()} Report</h6>
+                <small class="text-muted">Generated: ${new Date(report.generated_at).toLocaleString()}</small>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <strong>Total Mentions:</strong> ${report.data.total_tweets}<br>
+                    <strong>Positive:</strong> ${report.data.positive_tweets} (${report.data.sentiment_distribution.positive}%)<br>
+                    <strong>Negative:</strong> ${report.data.negative_tweets} (${report.data.sentiment_distribution.negative}%)<br>
+                    <strong>Brand Mentions:</strong> ${report.data.brand_mentions.length}
+                </div>
+                <div class="col-6">
+                    <strong>ROI Score:</strong> ${report.data.roi_insights.overall_roi}<br>
+                    <strong>Engagement:</strong> ${report.data.roi_insights.engagement_score}<br>
+                    <strong>Sentiment:</strong> ${report.data.roi_insights.sentiment_score}<br>
+                    <strong>Trend:</strong> ${report.data.market_trends[0]?.insight || 'stable'}
+                </div>
+            </div>
+            <div class="mt-2">
+                <strong>Key Insights:</strong><br>
+                <small>${report.data.marketing_recommendations.slice(0, 2).join('<br>')}</small>
+            </div>
+        `;
+        
+        preview.innerHTML = content;
+    }
+
+    function downloadMarketingReport() {
+        if (!currentMarketingReport) return;
+        
+        const reportContent = generateMarketingReportContent(currentMarketingReport);
+        
+        const blob = new Blob([reportContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `marketing_report_${currentMarketingReport.id}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function generateMarketingReportContent(report) {
+        return `
+MARKETING SENTIMENT ANALYSIS REPORT
+==================================
+
+Report ID: ${report.id}
+Type: ${report.type.replace('_', ' ').toUpperCase()}
+Time Range: ${report.range.replace('_', ' ').toUpperCase()}
+Generated: ${new Date(report.generated_at).toLocaleString()}
+
+EXECUTIVE SUMMARY
+================
+Total Mentions: ${report.data.total_tweets}
+Positive Sentiment: ${report.data.positive_tweets} (${report.data.sentiment_distribution.positive}%)
+Negative Sentiment: ${report.data.negative_tweets} (${report.data.sentiment_distribution.negative}%)
+Neutral Sentiment: ${report.data.neutral_tweets} (${report.data.sentiment_distribution.neutral}%)
+
+BRAND MENTIONS
+==============
+${report.data.brand_mentions.map((m, i) => `${i + 1}. ${m.keyword} - ${m.sentiment}`).join('\n')}
+
+PRODUCT FEEDBACK
+================
+${report.data.product_feedback.map((f, i) => `${i + 1}. ${f.category}: ${f.sentiment} - ${f.text}`).join('\n')}
+
+ROI INSIGHTS
+============
+Engagement Score: ${report.data.roi_insights.engagement_score}
+Sentiment Score: ${report.data.roi_insights.sentiment_score}
+Overall ROI: ${report.data.roi_insights.overall_roi}
+Recommendation: ${report.data.roi_insights.recommendation}
+
+MARKETING RECOMMENDATIONS
+=========================
+${report.data.marketing_recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+---
+Report generated by AI Marketing Sentiment Analysis System
+        `.trim();
+    }
+
+    // Event Listeners for Marketing Report Generation
+    generateMarketingReportBtn.addEventListener('click', generateMarketingReport);
+    downloadMarketingReportBtn.addEventListener('click', downloadMarketingReport);
+    
+    // Enable marketing report generation when tweets are collected
+    function updateMarketingReportButtons() {
+        if (marketingTweetCount > 0) {
+            generateMarketingReportBtn.disabled = false;
+        }
+    }
 });
 </script>
 {% endblock %} 
